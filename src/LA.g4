@@ -85,7 +85,7 @@ parcela : op_unario parcela_unario | parcela_nao_unario;
 parcela_unario : '^' IDENT outros_ident dimensao | IDENT chamada_partes | NUM_INT | NUM_REAL | '(' expressao ')';
 parcela_nao_unario : '&' IDENT outros_ident dimensao | CADEIA;
 outras_parcelas : '%' parcela outras_parcelas | ;
-chamada_partes : '(' expressao mais_expressao ')' | outros_ident dimensao | ;
+chamada_partes : '(' expressao mais_expressao ')' | outros_ident dimensao ;
 exp_relacional : exp_aritmetica op_opcional;
 op_opcional : op_relacional exp_aritmetica | ;
 op_relacional : '=' | '<>' | '>=' | '<=' | '>' | '<';
