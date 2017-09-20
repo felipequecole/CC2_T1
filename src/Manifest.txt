@@ -1,0 +1,2 @@
+Main-Class: t1.TestaAnalisadorSintatico
+Class-Path: lib/antlr-4.7-complete.jar
