@@ -7,7 +7,7 @@ import org.antlr.v4.runtime.RecognitionException;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.File;
- 
+
 public class TestaAnalisadorSintatico {
 
     public static void main(String args[]) throws IOException, RecognitionException {
@@ -20,6 +20,7 @@ public class TestaAnalisadorSintatico {
         parser.removeErrorListeners();
         parser.addErrorListener(new T1ErrorListener(out));
         parser.programa();
+
         if (!out.isModificado()) {
             out.println("Fim da analise. Sem erros sintaticos.");
             out.println("Tabela de simbolos:");

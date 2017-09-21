@@ -1,4 +1,3 @@
 java -jar ./lib/antlr-4.7-complete.jar -package t1 -o ./ src/LA.g4 &&
-#sed -i '1 i package t1;' src/LA*.java
 javac -cp ./lib/*.jar -d ./  src/*.java &&
 jar -cfm t1.jar src/Manifest.txt t1
