@@ -8,7 +8,7 @@ import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.CommonToken;
-import t1.LALexer;
+
 public class T1ErrorListener implements ANTLRErrorListener {
 
     SaidaParser sp;

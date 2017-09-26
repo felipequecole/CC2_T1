@@ -6,7 +6,6 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
-import java.io.File;
 
 public class TestaAnalisadorSintatico {
 
