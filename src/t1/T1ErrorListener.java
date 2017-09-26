@@ -26,7 +26,11 @@ public class T1ErrorListener implements ANTLRErrorListener {
             }else if (ct.getType()==LALexer.COMMENTNFECHADO){
               sp.println("Linha " + (i+1) + ": comentario nao fechado");
             }else{
-              sp.println("Linha " + i + ": erro sintatico proximo a " + ct.getText());
+                if (ct.getText().equals("EOF")){
+                    sp.println("Linha " + i + ": erro sintatico proximo a EOF");
+                } else {
+                    sp.println("Linha " + i + ": erro sintatico proximo a " + ct.getText());
+                }
             }
         }
     }
