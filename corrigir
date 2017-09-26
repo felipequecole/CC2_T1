@@ -1,0 +1,2 @@
+java -jar  ./Corretor/CorretorTrabalho1.jar "java -jar ./t1.jar" gcc saida/ casosDeTesteT1 "619540, 619485, 619604" $*
+
