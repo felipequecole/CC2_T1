@@ -11,9 +11,9 @@ import org.antlr.v4.runtime.CommonToken;
 
 public class T1ErrorListener implements ANTLRErrorListener {
 
-    SaidaParser sp;
+    Saida sp;
 
-    public T1ErrorListener(SaidaParser sp) {
+    public T1ErrorListener(Saida sp) {
         this.sp = sp;
     }
 

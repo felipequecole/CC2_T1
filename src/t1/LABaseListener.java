@@ -1,4 +1,4 @@
-// Generated from src/LA.g4 by ANTLR 4.7
+// Generated from src/t1/LA.g4 by ANTLR 4.7
 package t1;
 
 import org.antlr.v4.runtime.ParserRuleContext;

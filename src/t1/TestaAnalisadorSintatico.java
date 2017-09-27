@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 public class TestaAnalisadorSintatico {
 
     public static void main(String args[]) throws IOException, RecognitionException {
-        SaidaParser out = new SaidaParser();
+        Saida out = new Saida();
         ANTLRInputStream input = new ANTLRInputStream(new FileInputStream(args[0]));
         LALexer lexer = new LALexer(input);
 

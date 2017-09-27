@@ -1,10 +1,13 @@
-// Generated from src/LA.g4 by ANTLR 4.7
+// Generated from src/t1/LA.g4 by ANTLR 4.7
 package t1;
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.misc.*;
 import org.antlr.v4.runtime.tree.*;
 import java.util.List;
+import java.util.Iterator;
+import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class LAParser extends Parser {
@@ -113,7 +116,7 @@ public class LAParser extends Parser {
 	}
 
 	@Override
-	public String getGrammarFileName() { return "t1/LA.g4"; }
+	public String getGrammarFileName() { return "LA.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }
@@ -1618,6 +1621,8 @@ public class LAParser extends Parser {
 	}
 
 	public static class Declaracoes_locaisContext extends ParserRuleContext {
+		public Declaracoes_locaisContext declaracoes_locais;
+		public List<Declaracoes_locaisContext> declocais = new ArrayList<Declaracoes_locaisContext>();
 		public Declaracao_localContext declaracao_local() {
 			return getRuleContext(Declaracao_localContext.class,0);
 		}
@@ -1658,7 +1663,8 @@ public class LAParser extends Parser {
 				setState(262);
 				declaracao_local();
 				setState(263);
-				declaracoes_locais();
+				((Declaracoes_locaisContext)_localctx).declaracoes_locais = declaracoes_locais();
+				((Declaracoes_locaisContext)_localctx).declocais.add(((Declaracoes_locaisContext)_localctx).declaracoes_locais);
 				}
 				break;
 			case T__1:

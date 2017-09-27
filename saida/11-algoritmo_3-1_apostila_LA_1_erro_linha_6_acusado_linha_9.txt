@@ -1,2 +1,1 @@
-Linha 9: erro sintatico proximo a leia
-Fim da compilacao
+t1.Saida@5c8da962

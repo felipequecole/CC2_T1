@@ -43,7 +43,7 @@ parametros_opcional : parametro | ;
 parametro : var_opcional identificador mais_ident ':' tipo_estendido mais_parametros ;
 var_opcional : 'var' | ;
 mais_parametros : ',' parametro | ;
-declaracoes_locais : declaracao_local declaracoes_locais | ;
+declaracoes_locais : declaracao_local declocais += declaracoes_locais | ;
 corpo : declaracoes_locais comandos ;
 comandos : cmd comandos | ;
 cmd : 'leia' '(' identificador mais_ident ')'
