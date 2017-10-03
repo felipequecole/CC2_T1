@@ -3,6 +3,38 @@ package t1;
 public class AnalisadorSemantico extends LABaseVisitor{
   PilhaDeTabelas escopos = new PilhaDeTabelas();
 
+  public Object visitExpressao(LAParser.ExpressaoContext ctx){
+    System.out.println((String) tipo_expressao(ctx));
+    return null;
+  }
+  public Object tipo_expressao(LAParser.ExpressaoContext ctx){
+    if(ctx.outros_termos_logicos().getChildCount()!=0)
+      return "logico";
+    if(ctx.termo_logico().outros_fatores_logicos().getChildCount()!=0)
+      return "logico";
+    return visitParcela_logica(ctx.termo_logico().fator_logico().parcela_logica());
+  }
+
+  @Override
+  public Object visitFator_logico(LAParser.Fator_logicoContext cx){
+    return null;
+  }
+
+  @Override
+  public Object visitParcela_logica(LAParser.Parcela_logicaContext ctx){
+    if(ctx.exp_relacional().getChildCount()==0)
+      return "logico";
+    return visitExp_relacional(ctx.exp_relacional());
+  }
+  @Override
+  public Object visitExp_relacional(LAParser.Exp_relacionalContext ctx){
+    if(ctx.op_opcional().getChildCount()!=0){
+      return "logico";
+    }
+    /*** falta fazer expressão aritmerica; diferenciar inteiro de real***/
+    return "inteiro";
+  }
+
   @Override
   public Object visitPrograma(LAParser.ProgramaContext ctx) {
     escopos.empilhar(new TabelaDeSimbolos("global"));
@@ -11,8 +43,8 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitCorpo(LAParser.CorpoContext ctx) {
     escopos.empilhar(new TabelaDeSimbolos("local"));
-    return visitDeclaracoes_locais(ctx.declaracoes_locais());
-
+    //return visitDeclaracoes_locais(ctx.declaracoes_locais());
+    return visitChildren(ctx);
   }
 
     @Override
