@@ -20,8 +20,8 @@ public class TestaAnalisadorSintatico {
         parser.addErrorListener(new T1ErrorListener(out));
         LAParser.ProgramaContext arvore=parser.programa();
 
-        new AnalisadorSemantico().visitPrograma(arvore);
         if (!out.isModificado()) {
+            new AnalisadorSemantico().visitPrograma(arvore);
             out.println("Fim da analise. Sem erros sintaticos.");
             out.println("Tabela de simbolos:");
             System.out.print(out);
