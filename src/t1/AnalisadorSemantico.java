@@ -4,7 +4,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
   PilhaDeTabelas escopos = new PilhaDeTabelas();
 
   public Object visitExpressao(LAParser.ExpressaoContext ctx){
-    System.out.println((String) tipo_expressao(ctx));
+    //System.out.println((String) tipo_expressao(ctx));
     return null;
   }
   public Object tipo_expressao(LAParser.ExpressaoContext ctx){
@@ -49,10 +49,8 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
     @Override
     public Object visitDeclaracoes_locais(LAParser.Declaracoes_locaisContext ctx) {
-        visitDeclaracao_local(ctx.declaracao_local());
-
-        for (LAParser.Declaracoes_locaisContext ct : ctx.declocais){
-          visitDeclaracao_local(ct.declaracao_local());
+        for (LAParser.Declaracao_localContext ct : ctx.declocais){
+          visitDeclaracao_local(ct);
         }
         return null;
     }
@@ -84,15 +82,16 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitVariavel(LAParser.VariavelContext ctx) {
-   String tipo = (String) visitTipo(ctx.tipo());
+    String tipo = (String) visitTipo(ctx.tipo());
     TabelaDeSimbolos atual = escopos.topo();
-//    EntradaTabelaDeSimbolos etds = new EntradaTabelaDeSimbolos();
+//   EntradaTabelaDeSimbolos etds = new EntradaTabelaDeSimbolos();
     String simbolo = ctx.IDENT().getText();
     if(!atual.existeSimbolo(simbolo)){
       atual.adicionarSimbolo(simbolo, tipo);
     } else {
       Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
     }
+
     return null;
   }
 
