@@ -20,8 +20,8 @@ decl_local_global : declaracao_local | declaracao_global;
 declaracao_local : 'declare' variavel
  | 'constante' IDENT ':' tipo_basico '=' valor_constante
  | 'tipo' IDENT ':' tipo;
-variavel : IDENT dimensao mais_var ':' tipo;
-mais_var : ',' IDENT dimensao mais_var |;
+variavel : IDENT dimensao lista_mais_var+= mais_var* ':' tipo;
+mais_var : ',' IDENT dimensao ;
 identificador : ponteiros_opcionais IDENT dimensao outros_ident;
 ponteiros_opcionais : '^' ponteiros_opcionais |;
 outros_ident : '.' identificador |;
