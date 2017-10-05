@@ -22,8 +22,14 @@ public class TestaAnalisadorSintatico {
 
         if (!out.isModificado()) {
             new AnalisadorSemantico().visitPrograma(arvore);
-            out.println("Fim da analise. Sem erros sintaticos.");
-            out.println("Tabela de simbolos:");
+            out.println("Fim da compilacao");
+            try{
+                PrintWriter writer = new PrintWriter(args[1], "UTF-8");
+                writer.print(out);
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             System.out.print(out);
         } else {
             out.println("Fim da compilacao");

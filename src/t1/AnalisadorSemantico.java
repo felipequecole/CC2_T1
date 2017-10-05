@@ -85,12 +85,22 @@ public class AnalisadorSemantico extends LABaseVisitor{
     String tipo = (String) visitTipo(ctx.tipo());
     TabelaDeSimbolos atual = escopos.topo();
 //   EntradaTabelaDeSimbolos etds = new EntradaTabelaDeSimbolos();
-    System.out.println(ctx.lista_mais_var.size());
     String simbolo = ctx.IDENT().getText();
     if(!atual.existeSimbolo(simbolo)){
       atual.adicionarSimbolo(simbolo, tipo);
     } else {
       Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
+    }
+
+    for(LAParser.Mais_varContext ct: ctx.lista_mais_var){
+      simbolo = ct.IDENT().getText();
+
+      if(!atual.existeSimbolo(simbolo)){
+        atual.adicionarSimbolo(simbolo, tipo);
+      } else {
+        Saida.println("Linha "+ct.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
+
+      }
     }
 
     return null;
