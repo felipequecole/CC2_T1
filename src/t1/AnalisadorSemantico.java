@@ -75,7 +75,14 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitPrograma(LAParser.ProgramaContext ctx) {
     escopos.empilhar(new TabelaDeSimbolos("global"));
-    return visitCorpo(ctx.corpo());
+    escoposTipo.empilhar(new TabelaDeSimbolos("Tipo_global"));
+    if(ctx.declaracoes() != null){
+      visitDeclaracoes(ctx.declaracoes());
+    }
+    if(ctx.corpo() !=null){
+      visitCorpo(ctx.corpo());
+    }
+    return null;
   }
   @Override
   public Object visitCorpo(LAParser.CorpoContext ctx) {
@@ -150,6 +157,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitDeclaracao_local(LAParser.Declaracao_localContext ctx) {
+
     TabelaDeSimbolos atual = escopos.topo();
     TabelaDeSimbolos atualTipo = escoposTipo.topo();
 
