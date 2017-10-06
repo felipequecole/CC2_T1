@@ -11,6 +11,8 @@ import java.util.List;
 
 public class AnalisadorSemantico extends LABaseVisitor{
   PilhaDeTabelas escopos = new PilhaDeTabelas();
+  PilhaDeTabelas escoposTipo = new PilhaDeTabelas();
+
   CommonTokenStream cts;
   public void setTokenStream(CommonTokenStream c){
     cts=c;
@@ -148,14 +150,33 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitDeclaracao_local(LAParser.Declaracao_localContext ctx) {
+    TabelaDeSimbolos atual = escopos.topo();
+    TabelaDeSimbolos atualTipo = escoposTipo.topo();
+
     if (ctx.variavel() != null){
       visitVariavel(ctx.variavel());
 
     } else if (ctx.tipo_basico() != null){
-      visitTipo_basico(ctx.tipo_basico());
+      String tipo = (String) visitTipo_basico(ctx.tipo_basico());
+      String simbolo = ctx.IDENT().getText();
+      //adicionando constante na tabela de simbolo tipos
+      if(!atual.existeSimbolo(simbolo)&&(!atualTipo.existeSimbolo(simbolo))){
+        atualTipo.adicionarSimbolo(simbolo, tipo);
+      } else {
+        Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
+      }
+
       visitValor_constante(ctx.valor_constante());
     } else {
-      visitTipo(ctx.tipo());
+      String tipo = (String) visitTipo(ctx.tipo());
+      String simbolo = ctx.IDENT().getText();
+
+      //adicionando tipo na tabela de simbolo tipos
+      if(!atual.existeSimbolo(simbolo)&&(!atualTipo.existeSimbolo(simbolo))){
+        atualTipo.adicionarSimbolo(simbolo, tipo);
+      } else {
+        Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
+      }
     }
     return null;
   }
@@ -163,10 +184,11 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitVariavel(LAParser.VariavelContext ctx) {
     String tipo = (String) visitTipo(ctx.tipo());
+    TabelaDeSimbolos atualTipo = escoposTipo.topo();
     TabelaDeSimbolos atual = escopos.topo();
 //   EntradaTabelaDeSimbolos etds = new EntradaTabelaDeSimbolos();
     String simbolo = ctx.IDENT().getText();
-    if(!atual.existeSimbolo(simbolo)){
+    if(!atual.existeSimbolo(simbolo)&&(!atualTipo.existeSimbolo(simbolo))){
       atual.adicionarSimbolo(simbolo, tipo);
     } else {
       Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
@@ -175,7 +197,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
     for(LAParser.Mais_varContext ct: ctx.lista_mais_var){
       simbolo = ct.IDENT().getText();
 
-      if(!atual.existeSimbolo(simbolo)){
+      if(!atual.existeSimbolo(simbolo)&&(!atualTipo.existeSimbolo(simbolo))){
         atual.adicionarSimbolo(simbolo, tipo);
       } else {
         Saida.println("Linha "+ct.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
@@ -203,5 +225,10 @@ public class AnalisadorSemantico extends LABaseVisitor{
     if(ctx!=null)
       return ctx.getText();
     return null;
+  }
+
+  @Override
+  public Object visitTipo(LAParser.TipoContext ctx) {
+    return visitTipo_estendido(ctx.tipo_estendido());
   }
 }
