@@ -88,6 +88,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
   public Object visitCorpo(LAParser.CorpoContext ctx) {
     escopos.empilhar(new TabelaDeSimbolos("local"));
     //Visitando comando
+
           visitDeclaracoes_locais(ctx.declaracoes_locais());
           visitComandos(ctx.comandos());
     return null;
@@ -103,36 +104,46 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
     @Override
   public Object visitDeclaracoes(LAParser.DeclaracoesContext ctx) {
-    return visitDecl_local_global(ctx.decl_local_global());
+    if(ctx!=null){
+      return visitDecl_local_global(ctx.decl_local_global());
+    }
+    return null;
   }
 
   @Override
   public Object visitDecl_local_global(LAParser.Decl_local_globalContext ctx) {
-    return visitDeclaracao_local(ctx.declaracao_local());
+    if(ctx!=null){
+      return visitDeclaracao_local(ctx.declaracao_local());
+    }
+    return null;
   }
 
 
-  @Override
+/*  @Override
   public Object visitComandos(LAParser.ComandosContext ctx) {
       if(ctx.cmd() !=null){
         visitCmd(ctx.cmd());
       }
 
     return null;
-  }
+  }*/
 
   @Override
   public Object visitCmd(LAParser.CmdContext ctx) {
     //Verificando a primeira variavel de leia
-    String simbolo = ctx.identificador().IDENT().getText();
-    if(!escopos.existeSimbolo(simbolo)){
-      Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
+    if(ctx!=null){
+        if(ctx.identificador()!=null){
+          String simbolo = ctx.identificador().IDENT().getText();
+          if(!escopos.existeSimbolo(simbolo)){
+            Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
+          }
+        }
+      return visitChildren(ctx);
     }
-    //Verificando as demais variaveis de leia
-    visitMais_ident(ctx.mais_ident());
-    //falta verificar na expressao
-
     return null;
+    //Verificando as demais variaveis de leia
+  //  visitMais_ident(ctx.mais_ident());
+    //falta verificar na expressao
   }
 
 
@@ -149,11 +160,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
     return null;
   }
 
-  @Override
-  public Object visitMais_expressao(LAParser.Mais_expressaoContext ctx) {
 
-    return null;
-  }
 
   @Override
   public Object visitDeclaracao_local(LAParser.Declaracao_localContext ctx) {
@@ -218,7 +225,10 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitTipo_estendido(LAParser.Tipo_estendidoContext ctx) {
-    return visitTipo_basico_ident(ctx.tipo_basico_ident());
+    if(ctx.tipo_basico_ident()!=null){
+      return visitTipo_basico_ident(ctx.tipo_basico_ident());
+    }
+    return null;
   }
 
   @Override
