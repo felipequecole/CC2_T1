@@ -1,10 +1,23 @@
 package t1;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.CommonTokenStream;
 
 public class AnalisadorSemantico extends LABaseVisitor{
   PilhaDeTabelas escopos = new PilhaDeTabelas();
-
+  CommonTokenStream cts;
+  public void setTokenStream(CommonTokenStream c){
+    cts=c;
+  }
   public Object visitExpressao(LAParser.ExpressaoContext ctx){
     //System.out.println((String) tipo_expressao(ctx));
+    for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
+      Token token=cts.get(i);
+      if(token.getType()==LAParser.IDENT){
+        if(!escopos.existeSimbolo(token.getText())){
+          Saida.println("Linha "+ token.getLine()+": identificador " +token.getText()+ " nao declarado");
+        }
+      }
+    }
     return null;
   }
   public Object tipo_expressao(LAParser.ExpressaoContext ctx){
@@ -32,6 +45,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
       return "logico";
     }
     /*** falta fazer expressão aritmerica; diferenciar inteiro de real***/
+
     return "inteiro";
   }
 
@@ -113,12 +127,15 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitTipo_basico_ident(LAParser.Tipo_basico_identContext ctx) {
-    return visitTipo_basico(ctx.tipo_basico());
-
+    if(ctx!=null)
+        return visitTipo_basico(ctx.tipo_basico());
+    return null;
   }
 
   @Override
   public Object visitTipo_basico(LAParser.Tipo_basicoContext ctx) {
-    return ctx.getText();
+    if(ctx!=null)
+      return ctx.getText();
+    return null;
   }
 }

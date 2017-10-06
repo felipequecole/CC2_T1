@@ -21,7 +21,9 @@ public class TestaAnalisadorSintatico {
         LAParser.ProgramaContext arvore=parser.programa();
 
         if (!out.isModificado()) {
-            new AnalisadorSemantico().visitPrograma(arvore);
+            AnalisadorSemantico as=new AnalisadorSemantico();
+            as.setTokenStream(tokens);
+            as.visitPrograma(arvore);
             out.println("Fim da compilacao");
             try{
                 PrintWriter writer = new PrintWriter(args[1], "UTF-8");
