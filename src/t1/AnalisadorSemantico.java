@@ -233,8 +233,23 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitTipo_basico_ident(LAParser.Tipo_basico_identContext ctx) {
-    if(ctx!=null)
+
+    if(ctx != null){
+      if(ctx.tipo_basico() != null){
         return visitTipo_basico(ctx.tipo_basico());
+      }else if(ctx.IDENT() != null){
+        if(escoposTipo.existeSimbolo(ctx.IDENT().getText())){
+          return ctx.IDENT().getText();
+        }else{
+          Saida.println("Linha "+ctx.IDENT().getSymbol().getLine() + ": tipo "
+                  +ctx.IDENT().getText() +" nao declarado");
+        }
+
+      }
+    }
+
+
+
     return null;
   }
 
@@ -247,6 +262,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitTipo(LAParser.TipoContext ctx) {
+
     return visitTipo_estendido(ctx.tipo_estendido());
   }
 }
