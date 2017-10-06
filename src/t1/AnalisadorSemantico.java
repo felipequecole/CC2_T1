@@ -1,12 +1,33 @@
 package t1;
 
+import org.antlr.v4.runtime.CommonToken;
+import org.antlr.v4.runtime.Token;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 public class AnalisadorSemantico extends LABaseVisitor{
   PilhaDeTabelas escopos = new PilhaDeTabelas();
 
   public Object visitExpressao(LAParser.ExpressaoContext ctx){
-    //System.out.println((String) tipo_expressao(ctx));
+
     return null;
   }
+
+  @Override
+  public Object visitTermo_logico(LAParser.Termo_logicoContext ctx) {
+
+
+    return null;
+  }
+
+  @Override
+  public Object visitOutros_termos_logicos(LAParser.Outros_termos_logicosContext ctx) {
+
+    return null;
+  }
+
   public Object tipo_expressao(LAParser.ExpressaoContext ctx){
     if(ctx.outros_termos_logicos().getChildCount()!=0)
       return "logico";
@@ -16,7 +37,13 @@ public class AnalisadorSemantico extends LABaseVisitor{
   }
 
   @Override
-  public Object visitFator_logico(LAParser.Fator_logicoContext cx){
+  public Object visitFator_logico(LAParser.Fator_logicoContext ctx){
+    return null;
+  }
+
+  @Override
+  public Object visitOutros_fatores_logicos(LAParser.Outros_fatores_logicosContext ctx) {
+
     return null;
   }
 
@@ -43,8 +70,10 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitCorpo(LAParser.CorpoContext ctx) {
     escopos.empilhar(new TabelaDeSimbolos("local"));
-    //return visitDeclaracoes_locais(ctx.declaracoes_locais());
-    return visitChildren(ctx);
+    //Visitando comando
+          visitDeclaracoes_locais(ctx.declaracoes_locais());
+          visitComandos(ctx.comandos());
+    return null;
   }
 
     @Override
@@ -65,6 +94,49 @@ public class AnalisadorSemantico extends LABaseVisitor{
     return visitDeclaracao_local(ctx.declaracao_local());
   }
 
+
+  @Override
+  public Object visitComandos(LAParser.ComandosContext ctx) {
+      if(ctx.cmd() !=null){
+        visitCmd(ctx.cmd());
+      }
+
+    return null;
+  }
+
+  @Override
+  public Object visitCmd(LAParser.CmdContext ctx) {
+    //Verificando a primeira variavel de leia
+    String simbolo = ctx.identificador().IDENT().getText();
+    if(!escopos.existeSimbolo(simbolo)){
+      Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
+    }
+    //Verificando as demais variaveis de leia
+    visitMais_ident(ctx.mais_ident());
+    //falta verificar na expressao
+    
+    return null;
+  }
+
+
+  @Override
+  public Object visitMais_ident(LAParser.Mais_identContext ctx) {
+
+    for(LAParser.IdentificadorContext ct: ctx.lista_ident){
+      String simbolo = ct.IDENT().getText();
+      if(!escopos.existeSimbolo(simbolo)){
+        Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
+      }
+    }
+
+    return null;
+  }
+
+  @Override
+  public Object visitMais_expressao(LAParser.Mais_expressaoContext ctx) {
+
+    return null;
+  }
 
   @Override
   public Object visitDeclaracao_local(LAParser.Declaracao_localContext ctx) {
