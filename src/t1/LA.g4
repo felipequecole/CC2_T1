@@ -27,7 +27,8 @@ ponteiros_opcionais : '^' ponteiros_opcionais |;
 outros_ident : '.' identificador |;
 dimensao : '[' exp_aritmetica ']' dimensao|;
 tipo : registro | tipo_estendido;
-mais_ident : ',' identificador mais_ident |;
+//mais_ident : ',' identificador mais_ident |;
+mais_ident : (',' lista_ident += identificador)*;
 mais_variaveis : variavel mais_variaveis |;
 tipo_basico : 'literal' | 'inteiro' | 'real' | 'logico';
 tipo_basico_ident : tipo_basico | IDENT;
@@ -56,7 +57,8 @@ cmd : 'leia' '(' identificador mais_ident ')'
  | '^' IDENT outros_ident dimensao '<-' expressao
  | IDENT chamada_atribuicao
  | 'retorne' expressao ;
-mais_expressao : ',' expressao mais_expressao | ;
+//mais_expressao : ',' expressao mais_expressao | ;
+mais_expressao : (',' lista_expressao += expressao)*;
 senao_opcional : 'senao' comandos | ;
 // Fim
 
@@ -93,6 +95,8 @@ expressao : termo_logico outros_termos_logicos;
 op_nao : 'nao' | ;
 termo_logico : fator_logico outros_fatores_logicos;
 outros_termos_logicos : 'ou' termo_logico outros_termos_logicos | ;
+//outros_termos_logicos : 'ou' lista_termosLogicos += termo_logico * ;
 outros_fatores_logicos : 'e' fator_logico outros_fatores_logicos | ;
+//outros_fatores_logicos : 'e' lista_fatoresLogicos += fator_logico*;
 fator_logico : op_nao parcela_logica;
 parcela_logica : 'verdadeiro' | 'falso' | exp_relacional;
