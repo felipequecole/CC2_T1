@@ -1,2 +1,0 @@
-Linha 6: identificador troco ja declarado anteriormente
-Fim da compilacao

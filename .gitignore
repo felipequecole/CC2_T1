@@ -2,3 +2,6 @@
 .idea
 gen
 *.class
+saida/*
+t1/*
+*.iml
