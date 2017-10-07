@@ -257,8 +257,16 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitCmd(LAParser.CmdContext ctx) {
-    //Verificando a primeira variavel de leia
+
     if(ctx!=null){
+        //Verificando se a variavel existe na atribuição, para e ^
+        if(ctx.IDENT() != null){
+          String simbolo = ctx.IDENT().getText();
+          if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
+            Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
+          }
+        }
+          //Verificando a primeira variavel de leia
         if(ctx.identificador()!=null){
           String simbolo = ctx.identificador().IDENT().getText();
           if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
