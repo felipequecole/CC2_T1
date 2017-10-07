@@ -42,7 +42,9 @@ public class AnalisadorSemantico extends LABaseVisitor{
       return "logico";
     if(ctx.termo_logico().outros_fatores_logicos().getChildCount()!=0)
       return "logico";
-    return visitParcela_logica(ctx.termo_logico().fator_logico().parcela_logica());
+    if(ctx.termo_logico()!=null && ctx.termo_logico().fator_logico()!=null)
+      return visitParcela_logica(ctx.termo_logico().fator_logico().parcela_logica());
+    return null;
   }
 
   @Override
@@ -58,9 +60,15 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitParcela_logica(LAParser.Parcela_logicaContext ctx){
-    if(ctx.exp_relacional().getChildCount()==0)
+    if(ctx!=null){
+      if(ctx.exp_relacional()!=null){
+        if(ctx.exp_relacional().getChildCount()==0)
+          return "logico";
+        return visitExp_relacional(ctx.exp_relacional());
+      }
       return "logico";
-    return visitExp_relacional(ctx.exp_relacional());
+    }
+    return null;
   }
   @Override
   public Object visitExp_relacional(LAParser.Exp_relacionalContext ctx){
