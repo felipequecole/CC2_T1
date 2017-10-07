@@ -104,8 +104,10 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
     @Override
   public Object visitDeclaracoes(LAParser.DeclaracoesContext ctx) {
-    if(ctx!=null){
-      return visitDecl_local_global(ctx.decl_local_global());
+
+    for(LAParser.Decl_local_globalContext ct : ctx.lista_DeclLocalGlobal){
+      System.out.println("passei aqui");
+      visitDecl_local_global(ct);
     }
     return null;
   }
