@@ -39,16 +39,15 @@ public class TabelaDeSimbolos {
         return false;
     }
 
-    public String getTipoSimbolo(String nome) {
+
+    public String getTipo (String nome){
         for(EntradaTabelaDeSimbolos etds:simbolos) {
             if(etds.getNome().equals(nome)) {
                 return etds.getTipo();
             }
         }
-        return null;
+        return "null";
     }
-
-
 
     @Override
     public String toString() {
@@ -58,4 +57,9 @@ public class TabelaDeSimbolos {
         }
         return ret;
     }
+
+    public  String getEscopo(){
+        return escopo;
+    }
+
 }

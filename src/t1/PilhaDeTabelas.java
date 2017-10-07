@@ -39,8 +39,7 @@ public class PilhaDeTabelas {
     public String getTipoSimbolo(String nome){
       for (TabelaDeSimbolos ts : pilha) {
           if (ts.existeSimbolo(nome)) {
-
-              return ts.getTipoSimbolo(nome);
+              return ts.getTipo(nome);
           }
       }
         return null;
