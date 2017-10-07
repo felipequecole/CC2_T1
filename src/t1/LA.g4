@@ -60,7 +60,7 @@ cmd : 'leia' '(' identificador mais_ident ')'
  | 'faca' comandos 'ate' expressao
  | '^' IDENT outros_ident dimensao '<-' expressao
  | IDENT chamada_atribuicao
- | 'retorne' expressao ;
+ | 'retorne' expReturn = expressao ;
 //mais_expressao : ',' expressao mais_expressao | ;
 mais_expressao : (',' lista_expressao += expressao)*;
 senao_opcional : 'senao' comandos | ;

@@ -56,4 +56,9 @@ public class TabelaDeSimbolos {
         }
         return ret;
     }
+
+    public  String getEscopo(){
+        return escopo;
+    }
+
 }

@@ -106,7 +106,6 @@ public class AnalisadorSemantico extends LABaseVisitor{
   public Object visitDeclaracoes(LAParser.DeclaracoesContext ctx) {
 
     for(LAParser.Decl_local_globalContext ct : ctx.lista_DeclLocalGlobal){
-      System.out.println("passei aqui");
       visitDecl_local_global(ct);
     }
     return null;
@@ -136,32 +135,45 @@ public class AnalisadorSemantico extends LABaseVisitor{
       if(ctx.tipo_estendido() != null){
         String tipo = ctx.tipo_estendido().getText();
         if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
-          System.out.println("Adicionei: "+ simbolo);
           atualTipo.adicionarSimbolo(simbolo,tipo);
         }else{
           Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
         }
-        // é um procedimento
-      }else{
-        if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
-          atualTipo.adicionarSimbolo(simbolo,"void");
-          System.out.println("Adicionei: "+ simbolo);
-        }else{
-          Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
-        }
-      }
-        //escopo de um funcao ou procedimento
-        escopos.empilhar(new TabelaDeSimbolos("Funcao|Procedimento"));
+
+        //escopo de um funcao
+        escopos.empilhar(new TabelaDeSimbolos("Funcao"));
 
         if(ctx.parametros_opcional()!=null){
-            visitParametros_opcional(ctx.parametros_opcional());
+          visitParametros_opcional(ctx.parametros_opcional());
         }
         //visitando os comandos
         if(ctx.comandos() != null){
           visitComandos(ctx.comandos());
         }
-        //saindo do escopo funcao ou procedimento
+        //saindo do escopo funcao
         escopos.desempilhar();
+
+        // é um procedimento
+      }else {
+        if ((!escopos.existeSimbolo(simbolo)) && (!escoposTipo.existeSimbolo(simbolo))) {
+          atualTipo.adicionarSimbolo(simbolo, "void");
+        } else {
+          Saida.println("Linha " + ctx.getStart().getLine() + ": identificador " + simbolo + " ja declarado anteriormente");
+        }
+
+        //escopo de um procedimento
+        escopos.empilhar(new TabelaDeSimbolos("Procedimento"));
+
+        if(ctx.parametros_opcional()!=null){
+          visitParametros_opcional(ctx.parametros_opcional());
+        }
+        //visitando os comandos
+        if(ctx.comandos() != null){
+          visitComandos(ctx.comandos());
+        }
+        //saindo do escopo funcao
+        escopos.desempilhar();
+      }
     }
     return null;
   }
@@ -230,6 +242,9 @@ public class AnalisadorSemantico extends LABaseVisitor{
           if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
             Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
           }
+        }
+        if((ctx.expReturn != null)&&(escopos.topo().getEscopo() != "Funcao")){
+          Saida.println("Linha "+ctx.getStart().getLine() + ": comando retorne nao permitido nesse escopo");
         }
       return visitChildren(ctx);
     }
