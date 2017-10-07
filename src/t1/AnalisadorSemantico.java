@@ -18,7 +18,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
     cts=c;
   }
   public Object visitExpressao(LAParser.ExpressaoContext ctx){
-    //System.out.println((String) tipo_expressao(ctx));
+  //  System.out.println((String) tipo_expressao(ctx));
     for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
       Token token=cts.get(i);
       if(token.getType()==LAParser.IDENT){
@@ -68,8 +68,30 @@ public class AnalisadorSemantico extends LABaseVisitor{
       return "logico";
     }
     /*** falta fazer expressão aritmerica; diferenciar inteiro de real***/
-
-    return "inteiro";
+    String tipoExp="";
+    for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
+      Token token=cts.get(i);
+      int tipoToken=token.getType();
+      if(tipoToken==LAParser.IDENT){
+        String aux=escopos.getTipoSimbolo(token.getText());
+        if(aux.equals("literal"))
+          tipoToken=LAParser.CADEIA;
+        if(aux.equals("inteiro"))
+          tipoToken=LAParser.NUM_INT;
+        if(aux.equals("real"))
+          return "real";
+      }
+      if(tipoToken==LAParser.CADEIA){
+        if(tipoExp.equals(""))
+          tipoExp="literal";
+      }else if(tipoToken==LAParser.NUM_INT){
+        if(tipoExp.equals("") || tipoExp.equals("literal"))
+          tipoExp="inteiro";
+      }else if(tipoToken==LAParser.NUM_REAL){
+        return "real";
+      }
+    }
+    return tipoExp;
   }
 
   @Override
@@ -251,7 +273,16 @@ public class AnalisadorSemantico extends LABaseVisitor{
             Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
           }
         }
-        if((ctx.expReturn != null)&&(escopos.topo().getEscopo() != "Funcao")){
+      if(ctx.chamada_atribuicao()!=null){
+        String tipo=(String)tipo_expressao(ctx.chamada_atribuicao().expressao());
+        boolean atribInvalida=!tipo.equals(escopos.getTipoSimbolo(ctx.IDENT().getText()));
+
+        //System.out.println(tipo+"  tipooo "+escopos.getTipoSimbolo(ctx.IDENT().getText()));
+        if(atribInvalida){
+          Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
+                ": atribuicao nao compativel para "+ ctx.IDENT().getText());
+        }
+      }else  if((ctx.expReturn != null)&&(escopos.topo().getEscopo() != "Funcao")){
           Saida.println("Linha "+ctx.getStart().getLine() + ": comando retorne nao permitido nesse escopo");
         }
       return visitChildren(ctx);
