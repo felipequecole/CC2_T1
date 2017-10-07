@@ -22,7 +22,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
     for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
       Token token=cts.get(i);
       if(token.getType()==LAParser.IDENT){
-        if(!escopos.existeSimbolo(token.getText())){
+        if((!escopos.existeSimbolo(token.getText()))&&(!escoposTipo.existeSimbolo(token.getText()))){
           Saida.println("Linha "+ token.getLine()+": identificador " +token.getText()+ " nao declarado");
         }
       }
@@ -104,22 +104,115 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
     @Override
   public Object visitDeclaracoes(LAParser.DeclaracoesContext ctx) {
-    if(ctx!=null){
-      return visitDecl_local_global(ctx.decl_local_global());
+
+    for(LAParser.Decl_local_globalContext ct : ctx.lista_DeclLocalGlobal){
+      System.out.println("passei aqui");
+      visitDecl_local_global(ct);
     }
     return null;
   }
 
   @Override
   public Object visitDecl_local_global(LAParser.Decl_local_globalContext ctx) {
+
     if(ctx!=null){
-      return visitDeclaracao_local(ctx.declaracao_local());
+      if(ctx.declaracao_global() != null){
+        visitDeclaracao_global(ctx.declaracao_global());
+      }if(ctx.declaracao_local()!=null){
+        return visitDeclaracao_local(ctx.declaracao_local());
+      }
     }
     return null;
   }
 
+  @Override
+  public Object visitDeclaracao_global(LAParser.Declaracao_globalContext ctx) {
+    TabelaDeSimbolos atual = escopos.topo();
+    TabelaDeSimbolos atualTipo = escoposTipo.topo();
+    if(ctx != null){
 
-/*  @Override
+      String simbolo = ctx.IDENT().getText();
+      //verifica que é uma função
+      if(ctx.tipo_estendido() != null){
+        String tipo = ctx.tipo_estendido().getText();
+        if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
+          System.out.println("Adicionei: "+ simbolo);
+          atualTipo.adicionarSimbolo(simbolo,tipo);
+        }else{
+          Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
+        }
+        // é um procedimento
+      }else{
+        if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
+          atualTipo.adicionarSimbolo(simbolo,"void");
+          System.out.println("Adicionei: "+ simbolo);
+        }else{
+          Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
+        }
+      }
+        //escopo de um funcao ou procedimento
+        escopos.empilhar(new TabelaDeSimbolos("Funcao|Procedimento"));
+
+        if(ctx.parametros_opcional()!=null){
+            visitParametros_opcional(ctx.parametros_opcional());
+        }
+        //visitando os comandos
+        if(ctx.comandos() != null){
+          visitComandos(ctx.comandos());
+        }
+        //saindo do escopo funcao ou procedimento
+        escopos.desempilhar();
+    }
+    return null;
+  }
+
+  @Override
+  public Object visitParametros_opcional(LAParser.Parametros_opcionalContext ctx) {
+    TabelaDeSimbolos atual = escopos.topo();
+    if(ctx != null){
+      for(LAParser.ParametroContext ct: ctx.lista_parametro){
+        visitParametro(ct);
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public Object visitParametro(LAParser.ParametroContext ctx) {
+    TabelaDeSimbolos atual = escopos.topo();
+    if(ctx != null){
+      if(ctx.identificador()!=null){
+        //adicionando o primeiro parametro na tabela
+        String simbolo = ctx.identificador().IDENT().getText();
+        String tipo =(String)visitTipo_estendido(ctx.tipo_estendido());
+
+        if(!atual.existeSimbolo(simbolo)){
+          atual.adicionarSimbolo(simbolo,tipo);
+        }else{
+          Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
+        }
+        //adicionando as demais
+        if(ctx.mais_ident() != null){
+          for(LAParser.IdentificadorContext ct: ctx.mais_ident().lista_ident){
+            simbolo = ct.IDENT().getText();
+            if(!atual.existeSimbolo(simbolo)){
+              atual.adicionarSimbolo(simbolo,tipo);
+            }else{
+              Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
+            }
+          }
+        }
+      }
+      //Visitando mais_parametros
+      for(LAParser.ParametroContext ct: ctx.mais_parametros().lista_MaisParametros){
+        visitParametro(ct);
+      }
+    }
+
+    return null;
+  }
+
+  /*  @Override
   public Object visitComandos(LAParser.ComandosContext ctx) {
       if(ctx.cmd() !=null){
         visitCmd(ctx.cmd());
@@ -134,7 +227,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
     if(ctx!=null){
         if(ctx.identificador()!=null){
           String simbolo = ctx.identificador().IDENT().getText();
-          if(!escopos.existeSimbolo(simbolo)){
+          if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
             Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
           }
         }
@@ -149,12 +242,14 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitMais_ident(LAParser.Mais_identContext ctx) {
-
     for(LAParser.IdentificadorContext ct: ctx.lista_ident){
       String simbolo = ct.IDENT().getText();
-      if(!escopos.existeSimbolo(simbolo)){
+
+      if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
         Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
       }
+
+
     }
 
     return null;
@@ -180,7 +275,6 @@ public class AnalisadorSemantico extends LABaseVisitor{
       } else {
         Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
       }
-
       visitValor_constante(ctx.valor_constante());
     } else {
       String tipo = (String) visitTipo(ctx.tipo());
@@ -225,9 +319,12 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitTipo_estendido(LAParser.Tipo_estendidoContext ctx) {
-    if(ctx.tipo_basico_ident()!=null){
-      return visitTipo_basico_ident(ctx.tipo_basico_ident());
+    if(ctx != null){
+      if(ctx.tipo_basico_ident()!=null){
+        return visitTipo_basico_ident(ctx.tipo_basico_ident());
+      }
     }
+
     return null;
   }
 

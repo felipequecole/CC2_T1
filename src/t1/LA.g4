@@ -15,7 +15,8 @@ WS	:	(' ' | '\t' | '\r' | '\n') -> skip;
 ERROCHAR:.;
 
 programa : declaracoes 'algoritmo' corpo 'fim_algoritmo';
-declaracoes : decl_local_global declaracoes |;
+//declaracoes : decl_local_global declaracoes |;
+declaracoes : lista_DeclLocalGlobal += decl_local_global*;
 decl_local_global : declaracao_local | declaracao_global;
 declaracao_local : 'declare' variavel
  | 'constante' IDENT ':' tipo_basico '=' valor_constante
@@ -40,10 +41,13 @@ valor_constante : CADEIA | NUM_INT | NUM_REAL | 'verdadeiro' | 'falso' ;
 registro : 'registro' variavel mais_variaveis 'fim_registro' ;
 declaracao_global : 'procedimento' IDENT '(' parametros_opcional ')' declaracoes_locais comandos 'fim_procedimento'
  | 'funcao' IDENT '(' parametros_opcional ')' ':' tipo_estendido declaracoes_locais comandos 'fim_funcao' ;
-parametros_opcional : parametro | ;
+//parametros_opcional : parametro | ;
+parametros_opcional : lista_parametro += parametro* ;
+
 parametro : var_opcional identificador mais_ident ':' tipo_estendido mais_parametros ;
 var_opcional : 'var' | ;
-mais_parametros : ',' parametro | ;
+//mais_parametros : ',' parametro | ;
+mais_parametros : (',' lista_MaisParametros += parametro)* ;
 declaracoes_locais : declocais+=declaracao_local*  ;
 corpo : declaracoes_locais comandos ;
 comandos : cmd comandos | ;
