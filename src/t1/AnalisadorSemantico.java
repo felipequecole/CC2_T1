@@ -13,6 +13,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
   PilhaDeTabelas escopos = new PilhaDeTabelas();
   PilhaDeTabelas escoposTipo = new PilhaDeTabelas();
 
+
   CommonTokenStream cts;
   public void setTokenStream(CommonTokenStream c){
     cts=c;
