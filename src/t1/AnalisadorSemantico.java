@@ -14,6 +14,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
   PilhaDeTabelas escoposTipo = new PilhaDeTabelas();
   ArrayList<ParametrosFuncProc> listaPFC= new ArrayList<ParametrosFuncProc>();
 
+
   CommonTokenStream cts;
   public void setTokenStream(CommonTokenStream c){
     cts=c;

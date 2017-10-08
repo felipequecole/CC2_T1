@@ -4,6 +4,8 @@ import java.io.IOException;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
+
 import java.io.FileInputStream;
 import java.io.PrintWriter;
 
@@ -24,15 +26,27 @@ public class TestaAnalisadorSintatico {
             AnalisadorSemantico as=new AnalisadorSemantico();
             as.setTokenStream(tokens);
             as.visitPrograma(arvore);
-            out.println("Fim da compilacao");
-            try{
-                PrintWriter writer = new PrintWriter(args[1], "UTF-8");
-                writer.print(out);
-                writer.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (!out.isModificado()) {
+                GeradorDeCodigo gc = new GeradorDeCodigo();
+                ParseTreeWalker.DEFAULT.walk(gc, arvore);
+                try{
+                    PrintWriter writer = new PrintWriter(args[1], "UTF-8");
+                    writer.print(gc.toString());
+                    writer.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                out.println("Fim da compilacao");
+                try{
+                    PrintWriter writer = new PrintWriter(args[1], "UTF-8");
+                    writer.print(out);
+                    writer.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                System.out.print(out);
             }
-            System.out.print(out);
         } else {
             out.println("Fim da compilacao");
             System.out.print(out);
