@@ -31,12 +31,6 @@ public class AnalisadorSemantico extends LABaseVisitor{
   }
 
 
-  @Override
-  public Object visitOutros_termos_logicos(LAParser.Outros_termos_logicosContext ctx) {
-
-    return null;
-  }
-
   public Object tipo_expressao(LAParser.ExpressaoContext ctx){
     if(ctx==null)
       return "";
@@ -45,35 +39,23 @@ public class AnalisadorSemantico extends LABaseVisitor{
     if(ctx.termo_logico().outros_fatores_logicos().getChildCount()!=0)
       return "logico";
     if(ctx.termo_logico()!=null && ctx.termo_logico().fator_logico()!=null)
-      return visitParcela_logica(ctx.termo_logico().fator_logico().parcela_logica());
+      return visitTipoParcela_logica(ctx.termo_logico().fator_logico().parcela_logica());
     return null;
   }
 
-  @Override
-  public Object visitFator_logico(LAParser.Fator_logicoContext ctx){
-    return null;
-  }
-
-  @Override
-  public Object visitOutros_fatores_logicos(LAParser.Outros_fatores_logicosContext ctx) {
-
-    return null;
-  }
-
-  @Override
-  public Object visitParcela_logica(LAParser.Parcela_logicaContext ctx){
+  public Object visitTipoParcela_logica(LAParser.Parcela_logicaContext ctx){
     if(ctx!=null){
       if(ctx.exp_relacional()!=null){
         if(ctx.exp_relacional().getChildCount()==0)
           return "logico";
-        return visitExp_relacional(ctx.exp_relacional());
+        return visitTipoExp_relacional(ctx.exp_relacional());
       }
       return "logico";
     }
     return null;
   }
-  @Override
-  public Object visitExp_relacional(LAParser.Exp_relacionalContext ctx){
+
+  public Object visitTipoExp_relacional(LAParser.Exp_relacionalContext ctx){
     if(ctx.op_opcional().getChildCount()!=0){
       return "logico";
     }
