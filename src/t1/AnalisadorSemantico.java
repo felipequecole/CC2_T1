@@ -291,9 +291,11 @@ public class AnalisadorSemantico extends LABaseVisitor{
       String tipo=(String)tipo_expressao(ctx.chamada_atribuicao().expressao());
       //System.out.println(escopos.getTipoSimbolo(ctx.IDENT().getText())+" a "+ tipo);
       boolean atribInvalida=!tipo.equals(escopos.getTipoSimbolo(ctx.IDENT().getText()));
+      if(escopos.getTipoSimbolo(ctx.IDENT().getText())==null)
+        atribInvalida=false;
       if(tipo.equals(""))
         atribInvalida=true;
-      //System.out.println(tipo+"  tipooo "+escopos.getTipoSimbolo(ctx.IDENT().getText()));
+      //System.out.println(ctx.IDENT().getText());
       if(atribInvalida){
         Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
               ": atribuicao nao compativel para "+ ctx.IDENT().getText());
@@ -387,12 +389,10 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitTipo_estendido(LAParser.Tipo_estendidoContext ctx) {
-    if(ctx != null){
-      if(ctx.tipo_basico_ident()!=null){
-        return visitTipo_basico_ident(ctx.tipo_basico_ident());
-      }
-    }
-
+    if(ctx == null)
+      return null;
+    if(ctx.tipo_basico_ident()!=null)
+      return visitTipo_basico_ident(ctx.tipo_basico_ident());
     return null;
   }
 
