@@ -12,6 +12,7 @@ import java.util.List;
 public class AnalisadorSemantico extends LABaseVisitor{
   PilhaDeTabelas escopos = new PilhaDeTabelas();
   PilhaDeTabelas escoposTipo = new PilhaDeTabelas();
+  ArrayList<ParametrosFuncProc> listaPFC= new ArrayList<ParametrosFuncProc>();
 
   CommonTokenStream cts;
   public void setTokenStream(CommonTokenStream c){
@@ -173,8 +174,21 @@ public class AnalisadorSemantico extends LABaseVisitor{
         //escopo de um funcao
         escopos.empilhar(new TabelaDeSimbolos("Funcao"));
 
+        //adicionando os parametros
+        ParametrosFuncProc ListParametros = new ParametrosFuncProc(ctx.IDENT().getText());
+        listaPFC.add(ListParametros);
+        ArrayList<String> aux = new ArrayList<String>();
+
         if(ctx.parametros_opcional()!=null){
-          visitParametros_opcional(ctx.parametros_opcional());
+          aux = (ArrayList<String>) visitParametros_opcional(ctx.parametros_opcional());
+        }
+
+        int i = listaPFC.indexOf(ListParametros);
+        System.out.println(i);
+        listaPFC.get(i).setLista(aux);
+
+        for(int j = 0;j<listaPFC.get(i).getLista().size();j++){
+          System.out.println(listaPFC.get(i).getLista().get(j));
         }
         //visitando os comandos
         if(ctx.comandos() != null){
@@ -193,10 +207,13 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
         //escopo de um procedimento
         escopos.empilhar(new TabelaDeSimbolos("Procedimento"));
+        //adicionando os parametros
+
 
         if(ctx.parametros_opcional()!=null){
-          visitParametros_opcional(ctx.parametros_opcional());
+         visitParametros_opcional(ctx.parametros_opcional());
         }
+
         //visitando os comandos
         if(ctx.comandos() != null){
           visitComandos(ctx.comandos());
@@ -211,25 +228,30 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitParametros_opcional(LAParser.Parametros_opcionalContext ctx) {
     TabelaDeSimbolos atual = escopos.topo();
+    ArrayList<String> listaDeParametros = new ArrayList<String>();
     if(ctx != null){
       for(LAParser.ParametroContext ct: ctx.lista_parametro){
-        visitParametro(ct);
+        listaDeParametros.addAll((ArrayList<String>) visitParametro(ct));
       }
     }
-    return null;
+    return listaDeParametros;
   }
 
   @Override
   public Object visitParametro(LAParser.ParametroContext ctx) {
     TabelaDeSimbolos atual = escopos.topo();
+    ArrayList<String> listaDeParametros = new ArrayList<String>();
+
     if(ctx != null){
       if(ctx.identificador()!=null){
         //adicionando o primeiro parametro na tabela
         String simbolo = ctx.identificador().IDENT().getText();
         String tipo =(String)visitTipo_estendido(ctx.tipo_estendido());
-
+        //Adiciona na lista
+        listaDeParametros.add(tipo);
         if(!atual.existeSimbolo(simbolo)){
           atual.adicionarSimbolo(simbolo,tipo);
+
         }else{
           Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
         }
@@ -237,8 +259,11 @@ public class AnalisadorSemantico extends LABaseVisitor{
         if(ctx.mais_ident() != null){
           for(LAParser.IdentificadorContext ct: ctx.mais_ident().lista_ident){
             simbolo = ct.IDENT().getText();
+            //Adiciona na lista
+            listaDeParametros.add(tipo);
             if(!atual.existeSimbolo(simbolo)){
               atual.adicionarSimbolo(simbolo,tipo);
+
             }else{
               Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
             }
@@ -247,11 +272,12 @@ public class AnalisadorSemantico extends LABaseVisitor{
       }
       //Visitando mais_parametros
       for(LAParser.ParametroContext ct: ctx.mais_parametros().lista_MaisParametros){
-        visitParametro(ct);
+        //Concatenando todas as listas de parametros
+        listaDeParametros.addAll(((ArrayList<String>)visitParametro(ct)));
       }
     }
 
-    return null;
+    return listaDeParametros;
   }
 
   /*  @Override
