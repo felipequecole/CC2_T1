@@ -23,9 +23,9 @@ declaracao_local : 'declare' variavel
  | 'tipo' IDENT ':' tipo;
 variavel : IDENT dimensao lista_mais_var+= mais_var* ':' tipo;
 mais_var : ',' IDENT dimensao ;
-identificador : ponteiros_opcionais IDENT dimensao outros_ident;
+identificador : ponteiros_opcionais IDENT outros_ident dimensao ;
 ponteiros_opcionais : '^' ponteiros_opcionais |;
-outros_ident : '.' identificador |;
+outros_ident : ('.' lista_outros_ident +=identificador)*;
 dimensao : '[' exp_aritmetica ']' dimensao|;
 tipo : registro | tipo_estendido;
 //mais_ident : ',' identificador mais_ident |;
