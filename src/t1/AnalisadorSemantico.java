@@ -32,47 +32,31 @@ public class AnalisadorSemantico extends LABaseVisitor{
   }
 
 
-  @Override
-  public Object visitOutros_termos_logicos(LAParser.Outros_termos_logicosContext ctx) {
-
-    return null;
-  }
-
   public Object tipo_expressao(LAParser.ExpressaoContext ctx){
+    if(ctx==null)
+      return "";
     if(ctx.outros_termos_logicos().getChildCount()!=0)
       return "logico";
     if(ctx.termo_logico().outros_fatores_logicos().getChildCount()!=0)
       return "logico";
     if(ctx.termo_logico()!=null && ctx.termo_logico().fator_logico()!=null)
-      return visitParcela_logica(ctx.termo_logico().fator_logico().parcela_logica());
+      return visitTipoParcela_logica(ctx.termo_logico().fator_logico().parcela_logica());
     return null;
   }
 
-  @Override
-  public Object visitFator_logico(LAParser.Fator_logicoContext ctx){
-    return null;
-  }
-
-  @Override
-  public Object visitOutros_fatores_logicos(LAParser.Outros_fatores_logicosContext ctx) {
-
-    return null;
-  }
-
-  @Override
-  public Object visitParcela_logica(LAParser.Parcela_logicaContext ctx){
+  public Object visitTipoParcela_logica(LAParser.Parcela_logicaContext ctx){
     if(ctx!=null){
       if(ctx.exp_relacional()!=null){
         if(ctx.exp_relacional().getChildCount()==0)
           return "logico";
-        return visitExp_relacional(ctx.exp_relacional());
+        return visitTipoExp_relacional(ctx.exp_relacional());
       }
       return "logico";
     }
     return null;
   }
-  @Override
-  public Object visitExp_relacional(LAParser.Exp_relacionalContext ctx){
+
+  public Object visitTipoExp_relacional(LAParser.Exp_relacionalContext ctx){
     if(ctx.op_opcional().getChildCount()!=0){
       return "logico";
     }
@@ -81,8 +65,11 @@ public class AnalisadorSemantico extends LABaseVisitor{
     for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
       Token token=cts.get(i);
       int tipoToken=token.getType();
+
       if(tipoToken==LAParser.IDENT){
         String aux=escopos.getTipoSimbolo(token.getText());
+        if(aux==null)
+          return "";
         if(aux.equals("literal"))
           tipoToken=LAParser.CADEIA;
         if(aux.equals("inteiro"))
@@ -292,36 +279,39 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitCmd(LAParser.CmdContext ctx) {
 
-    if(ctx!=null){
-        //Verificando se a variavel existe na atribuição, para e ^
-        if(ctx.IDENT() != null){
-          String simbolo = ctx.IDENT().getText();
-          if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
-            Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
-          }
+    if(ctx==null)
+      return null;
+      //Verificando se a variavel existe na atribuição, para e ^
+      if(ctx.IDENT() != null){
+        String simbolo = ctx.IDENT().getText();
+        if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
+          Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
         }
-          //Verificando a primeira variavel de leia
-        if(ctx.identificador()!=null){
-          String simbolo = ctx.identificador().IDENT().getText();
-          if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
-            Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
-          }
+      }
+        //Verificando a primeira variavel de leia
+      if(ctx.identificador()!=null){
+        String simbolo = ctx.identificador().IDENT().getText();
+        if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
+          Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
         }
-      if(ctx.chamada_atribuicao()!=null){
-        String tipo=(String)tipo_expressao(ctx.chamada_atribuicao().expressao());
-        boolean atribInvalida=!tipo.equals(escopos.getTipoSimbolo(ctx.IDENT().getText()));
-
-        //System.out.println(tipo+"  tipooo "+escopos.getTipoSimbolo(ctx.IDENT().getText()));
-        if(atribInvalida){
-          Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
-                ": atribuicao nao compativel para "+ ctx.IDENT().getText());
-        }
-      }else  if((ctx.expReturn != null)&&(escopos.topo().getEscopo() != "Funcao")){
-          Saida.println("Linha "+ctx.getStart().getLine() + ": comando retorne nao permitido nesse escopo");
-        }
-      return visitChildren(ctx);
-    }
-    return null;
+      }
+    if(ctx.chamada_atribuicao()!=null){
+      String tipo=(String)tipo_expressao(ctx.chamada_atribuicao().expressao());
+      //System.out.println(escopos.getTipoSimbolo(ctx.IDENT().getText())+" a "+ tipo);
+      boolean atribInvalida=!tipo.equals(escopos.getTipoSimbolo(ctx.IDENT().getText()));
+      if(escopos.getTipoSimbolo(ctx.IDENT().getText())==null)
+        atribInvalida=false;
+      if(tipo.equals(""))
+        atribInvalida=true;
+      //System.out.println(ctx.IDENT().getText());
+      if(atribInvalida){
+        Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
+              ": atribuicao nao compativel para "+ ctx.IDENT().getText());
+      }
+    }else  if((ctx.expReturn != null)&&(escopos.topo().getEscopo() != "Funcao")){
+        Saida.println("Linha "+ctx.getStart().getLine() + ": comando retorne nao permitido nesse escopo");
+      }
+    return visitChildren(ctx);
     //Verificando as demais variaveis de leia
   //  visitMais_ident(ctx.mais_ident());
     //falta verificar na expressao
@@ -407,12 +397,10 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitTipo_estendido(LAParser.Tipo_estendidoContext ctx) {
-    if(ctx != null){
-      if(ctx.tipo_basico_ident()!=null){
-        return visitTipo_basico_ident(ctx.tipo_basico_ident());
-      }
-    }
-
+    if(ctx == null)
+      return null;
+    if(ctx.tipo_basico_ident()!=null)
+      return visitTipo_basico_ident(ctx.tipo_basico_ident());
     return null;
   }
 
