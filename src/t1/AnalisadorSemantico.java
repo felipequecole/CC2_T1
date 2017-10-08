@@ -38,6 +38,8 @@ public class AnalisadorSemantico extends LABaseVisitor{
   }
 
   public Object tipo_expressao(LAParser.ExpressaoContext ctx){
+    if(ctx==null)
+      return "";
     if(ctx.outros_termos_logicos().getChildCount()!=0)
       return "logico";
     if(ctx.termo_logico().outros_fatores_logicos().getChildCount()!=0)
@@ -80,8 +82,11 @@ public class AnalisadorSemantico extends LABaseVisitor{
     for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
       Token token=cts.get(i);
       int tipoToken=token.getType();
+
       if(tipoToken==LAParser.IDENT){
         String aux=escopos.getTipoSimbolo(token.getText());
+        if(aux==null)
+          return "";
         if(aux.equals("literal"))
           tipoToken=LAParser.CADEIA;
         if(aux.equals("inteiro"))
@@ -266,36 +271,37 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitCmd(LAParser.CmdContext ctx) {
 
-    if(ctx!=null){
-        //Verificando se a variavel existe na atribuição, para e ^
-        if(ctx.IDENT() != null){
-          String simbolo = ctx.IDENT().getText();
-          if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
-            Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
-          }
+    if(ctx==null)
+      return null;
+      //Verificando se a variavel existe na atribuição, para e ^
+      if(ctx.IDENT() != null){
+        String simbolo = ctx.IDENT().getText();
+        if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
+          Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
         }
-          //Verificando a primeira variavel de leia
-        if(ctx.identificador()!=null){
-          String simbolo = ctx.identificador().IDENT().getText();
-          if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
-            Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
-          }
+      }
+        //Verificando a primeira variavel de leia
+      if(ctx.identificador()!=null){
+        String simbolo = ctx.identificador().IDENT().getText();
+        if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
+          Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
         }
-      if(ctx.chamada_atribuicao()!=null){
-        String tipo=(String)tipo_expressao(ctx.chamada_atribuicao().expressao());
-        boolean atribInvalida=!tipo.equals(escopos.getTipoSimbolo(ctx.IDENT().getText()));
-
-        //System.out.println(tipo+"  tipooo "+escopos.getTipoSimbolo(ctx.IDENT().getText()));
-        if(atribInvalida){
-          Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
-                ": atribuicao nao compativel para "+ ctx.IDENT().getText());
-        }
-      }else  if((ctx.expReturn != null)&&(escopos.topo().getEscopo() != "Funcao")){
-          Saida.println("Linha "+ctx.getStart().getLine() + ": comando retorne nao permitido nesse escopo");
-        }
-      return visitChildren(ctx);
-    }
-    return null;
+      }
+    if(ctx.chamada_atribuicao()!=null){
+      String tipo=(String)tipo_expressao(ctx.chamada_atribuicao().expressao());
+      //System.out.println(escopos.getTipoSimbolo(ctx.IDENT().getText())+" a "+ tipo);
+      boolean atribInvalida=!tipo.equals(escopos.getTipoSimbolo(ctx.IDENT().getText()));
+      if(tipo.equals(""))
+        atribInvalida=true;
+      //System.out.println(tipo+"  tipooo "+escopos.getTipoSimbolo(ctx.IDENT().getText()));
+      if(atribInvalida){
+        Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
+              ": atribuicao nao compativel para "+ ctx.IDENT().getText());
+      }
+    }else  if((ctx.expReturn != null)&&(escopos.topo().getEscopo() != "Funcao")){
+        Saida.println("Linha "+ctx.getStart().getLine() + ": comando retorne nao permitido nesse escopo");
+      }
+    return visitChildren(ctx);
     //Verificando as demais variaveis de leia
   //  visitMais_ident(ctx.mais_ident());
     //falta verificar na expressao
