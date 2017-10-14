@@ -3240,15 +3240,9 @@ public class LAParser extends Parser {
 			case IDENT:
 				enterOuterAlt(_localctx, 2);
 				{
-<<<<<<< HEAD
-				setState(441);
-				((Parcela_unarioContext)_localctx).IdentChamada = match(IDENT);
-				setState(442);
-=======
 				setState(443);
-				match(IDENT);
+				((Parcela_unarioContext)_localctx).IdentChamada = match(IDENT);
 				setState(444);
->>>>>>> 3355da207c1e617216bd2a49a08bc23ab13b607d
 				chamada_partes();
 				}
 				break;

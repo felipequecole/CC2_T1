@@ -127,7 +127,11 @@ public class AnalisadorSemantico extends LABaseVisitor{
       if(tipoToken==LAParser.IDENT){
         String aux=escopos.getTipoSimbolo(token.getText());
         if(aux==null)
+          aux=escoposTipo.getTipoSimbolo(token.getText());
+        if(aux==null)
           return "";
+        if(aux.equals("void"))
+          return "void";
         if(aux.equals("literal"))
           tipoToken=LAParser.CADEIA;
         if(aux.equals("inteiro"))
