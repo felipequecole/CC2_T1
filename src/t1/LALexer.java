@@ -101,6 +101,10 @@ public class LALexer extends Lexer {
 	}
 
 
+	    public boolean reg = false;
+	    public boolean escreva = false;
+
+
 	public LALexer(CharStream input) {
 		super(input);
 		_interp = new LexerATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
