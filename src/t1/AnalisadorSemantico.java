@@ -55,8 +55,21 @@ public class AnalisadorSemantico extends LABaseVisitor{
         ParametrosFuncProc aux = new ParametrosFuncProc(ctx.IdentChamada.getText());
         System.out.println("------"+ctx.IdentChamada.getText()+"------");
         aux.setLista((ArrayList<String>) visitChamada_partes(ctx.chamada_partes()));
-        //Verificando se a lista é correspondente a lista global
 
+        //Verificando se a lista é correspondente a lista global
+        for(int i = 0; i<=listaPFC.size()-1;i++){
+
+          String LG = (String)listaPFC.get(i).getIdentificador();
+          String LL = (String) aux.getIdentificador();
+
+          if(LG.equals(LL)){
+            if(listaPFC.get(i).getLista().equals(aux.getLista())){
+              System.out.println("Chamada: "+ctx.IdentChamada.getText() + " --ok--");
+            }else{
+              System.out.println("Chamada: "+ctx.IdentChamada.getText() + " --erro--");
+            }
+          }
+        }
         /*
         if( i == -1){
           Saida.println("Linha "+ctx.getStart().getLine() + ": incompatibilidade de " +
@@ -87,10 +100,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
         }
       }
     }
-    System.out.println("IMPRIMINDO A LISTA AUX");
-    for(int j =0; j< aux.size()-1;j++){
-      System.out.println("Elemento:" + aux.get(j));
-    }
+
     return aux;//super.visitChamada_partes(ctx);
   }
 
