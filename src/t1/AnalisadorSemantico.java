@@ -18,6 +18,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
   public void setTokenStream(CommonTokenStream c){
     cts=c;
   }
+
   public Object visitExpressao(LAParser.ExpressaoContext ctx){
   //  System.out.println((String) tipo_expressao(ctx));
     for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
@@ -28,6 +29,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
         }
       }
     }
+    visitChildren(ctx);
     return null;
   }
 
@@ -42,6 +44,53 @@ public class AnalisadorSemantico extends LABaseVisitor{
     if(ctx.termo_logico()!=null && ctx.termo_logico().fator_logico()!=null)
       return visitTipoParcela_logica(ctx.termo_logico().fator_logico().parcela_logica());
     return null;
+  }
+
+  @Override
+  public Object visitParcela_unario(LAParser.Parcela_unarioContext ctx) {
+    if(ctx != null){
+      if((ctx.chamada_partes() != null)&&(ctx.chamada_partes().expressao()!= null)){
+        //Criando lista de parametros da função
+        ParametrosFuncProc aux = new ParametrosFuncProc(ctx.IdentChamada.getText());
+        System.out.println("------"+ctx.IdentChamada.getText()+"------");
+        aux.setLista((ArrayList<String>) visitChamada_partes(ctx.chamada_partes()));
+        //Verificando se a lista é correspondente a lista global
+
+        /*
+        if( i == -1){
+          Saida.println("Linha "+ctx.getStart().getLine() + ": incompatibilidade de " +
+                  "parametros na chamada de  " + ctx.IdentChamada.getText());
+        }
+        */
+      }if(ctx.outros_ident() != null){
+        visitOutros_ident(ctx.outros_ident());
+      }if(ctx.dimensao() != null){
+        visitDimensao(ctx.dimensao());
+      }if(ctx.expressao() != null){
+        visitExpressao(ctx.expressao());
+      }
+    }
+    return null;//super.visitParcela_unario(ctx);
+  }
+
+  @Override
+  public Object visitChamada_partes(LAParser.Chamada_partesContext ctx) {
+    ArrayList<String> aux = new ArrayList<String>();
+
+    if(ctx != null){
+      if(ctx.expressao() != null){
+        aux.add((String)tipo_expressao(ctx.expressao()));
+      }if(ctx.mais_expressao() != null){
+        for(LAParser.ExpressaoContext ct: ctx.mais_expressao().lista_expressao){
+          aux.add((String)tipo_expressao(ct));
+        }
+      }
+    }
+    System.out.println("IMPRIMINDO A LISTA AUX");
+    for(int j =0; j< aux.size()-1;j++){
+      System.out.println("Elemento:" + aux.get(j));
+    }
+    return aux;//super.visitChamada_partes(ctx);
   }
 
   public Object visitTipoParcela_logica(LAParser.Parcela_logicaContext ctx){

@@ -88,7 +88,7 @@ outros_fatores: op_multiplicacao fator outros_fatores |;
 
 //@duduyamauchi
 parcela : op_unario parcela_unario | parcela_nao_unario;
-parcela_unario : '^' IDENT outros_ident dimensao | IDENT chamada_partes | NUM_INT | NUM_REAL | '(' expressao ')';
+parcela_unario : '^' IDENT outros_ident dimensao | IdentChamada = IDENT chamada_partes | NUM_INT | NUM_REAL | '(' expressao ')';
 parcela_nao_unario : '&' IDENT outros_ident dimensao | CADEIA;
 outras_parcelas : '%' parcela outras_parcelas | ;
 chamada_partes : '(' expressao mais_expressao ')' | outros_ident dimensao ;

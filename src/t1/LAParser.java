@@ -3214,6 +3214,7 @@ public class LAParser extends Parser {
 	}
 
 	public static class Parcela_unarioContext extends ParserRuleContext {
+		public Token IdentChamada;
 		public TerminalNode IDENT() { return getToken(LAParser.IDENT, 0); }
 		public Outros_identContext outros_ident() {
 			return getRuleContext(Outros_identContext.class,0);
@@ -3272,7 +3273,7 @@ public class LAParser extends Parser {
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(441);
-				match(IDENT);
+				((Parcela_unarioContext)_localctx).IdentChamada = match(IDENT);
 				setState(442);
 				chamada_partes();
 				}
