@@ -58,8 +58,8 @@ cmd : 'leia' '(' identificador mais_ident ')'
  | 'para' IDENT '<-' exp_aritmetica 'ate' exp_aritmetica 'faca' comandos 'fim_para'
  | 'enquanto' expressao 'faca' comandos 'fim_enquanto'
  | 'faca' comandos 'ate' expressao
- | '^' IDENT outros_ident dimensao '<-' expressao
- | IDENT chamada_atribuicao
+
+ | ponteiros_opcionais IDENT chamada_atribuicao
  | 'retorne' expReturn = expressao ;
 //mais_expressao : ',' expressao mais_expressao | ;
 mais_expressao : (',' lista_expressao += expressao)*;

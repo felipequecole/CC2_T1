@@ -202,6 +202,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
     return null;
   }
 
+
   @Override
   public Object visitDeclaracao_global(LAParser.Declaracao_globalContext ctx) {
     TabelaDeSimbolos atual = escopos.topo();
@@ -356,25 +357,36 @@ public class AnalisadorSemantico extends LABaseVisitor{
         }
       }
     if(ctx.chamada_atribuicao()!=null){
+
       String tipo=(String)tipo_expressao(ctx.chamada_atribuicao().expressao());
-      //System.out.println(escopos.getTipoSimbolo(ctx.IDENT().getText())+" a "+ tipo);
-      String tipoVar = escopos.getTipoSimbolo(ctx.IDENT().getText());
+      int ncounter= ponteiro_counter(ctx.ponteiros_opcionais());
+
+      String var=ctx.IDENT().getText();
+      String tipoVar = escopos.getTipoSimbolo(var);
+
       boolean atribInvalida =! tipo.equals(tipoVar);
 
-      if(tipoVar.equals("real")&&tipo.equals("inteiro"))
-        atribInvalida=false;
+      if(tipoVar==null){
 
-      if(escopos.getTipoSimbolo(ctx.IDENT().getText())==null)
         atribInvalida=false;
-
+      }
+      else{
+        for(int i=0;i<ncounter;i++){
+          var="^"+var;
+        }
+        tipoVar=tipoVar.substring(0,tipoVar.length() -ncounter);
+        //System.out.println(escopos.getTipoSimbolo(ctx.IDENT().getText())+" a "+ tipo);
       if(tipo.equals(""))
         atribInvalida=true;
-      //System.out.println(ctx.IDENT().getText());
-      if(tipo.equals("erro"))
+      else if(tipoVar.equals("real")&&tipo.equals("inteiro"))
+        atribInvalida=false;
+      else if(tipo.equals("erro"))
         atribInvalida=true;
+      }
+
       if(atribInvalida){
         Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
-              ": atribuicao nao compativel para "+ ctx.IDENT().getText());
+              ": atribuicao nao compativel para "+ var);
       }
     }else  if((ctx.expReturn != null)&&(escopos.topo().getEscopo() != "Funcao")){
         Saida.println("Linha "+ctx.getStart().getLine() + ": comando retorne nao permitido nesse escopo");
@@ -463,12 +475,28 @@ public class AnalisadorSemantico extends LABaseVisitor{
     return null;
   }
 
+  public int ponteiro_counter(LAParser.Ponteiros_opcionaisContext ctx){
+    if(ctx==null)
+      return 0;
+    if(ctx.ponteiros_opcionais()!=null)
+      return 1+ ponteiro_counter(ctx.ponteiros_opcionais());
+    return 0;
+  }
+
   @Override
   public Object visitTipo_estendido(LAParser.Tipo_estendidoContext ctx) {
     if(ctx == null)
       return null;
-    if(ctx.tipo_basico_ident()!=null)
-      return visitTipo_basico_ident(ctx.tipo_basico_ident());
+    if(ctx.tipo_basico_ident()!=null){
+      int nPonteiros=ponteiro_counter(ctx.ponteiros_opcionais());
+      String tipo=(String)visitTipo_basico_ident(ctx.tipo_basico_ident());
+      if(tipo==null)
+        return null;
+      for (int i =0;i<nPonteiros;i++){
+        tipo.concat("^");
+      }
+      return tipo;
+    }
     return null;
   }
 
@@ -488,9 +516,6 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
       }
     }
-
-
-
     return null;
   }
 
