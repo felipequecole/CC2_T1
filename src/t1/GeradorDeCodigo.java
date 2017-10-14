@@ -604,7 +604,7 @@ public class GeradorDeCodigo extends LABaseListener {
 
     @Override
     public void exitPrograma(LAParser.ProgramaContext ctx) {
-        System.out.println("Saiu do programa");
+//        System.out.println("Saiu do programa");
         System.out.println(saida);
     }
 
