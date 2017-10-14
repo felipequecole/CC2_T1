@@ -384,6 +384,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
         atribInvalida=true;
       }
 
+
       if(atribInvalida){
         Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
               ": atribuicao nao compativel para "+ var);
