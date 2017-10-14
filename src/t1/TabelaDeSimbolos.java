@@ -56,4 +56,8 @@ public class TabelaDeSimbolos {
         }
         return ret;
     }
+
+    public List<EntradaTabelaDeSimbolos> getSimbolos() {
+        return simbolos;
+    }
 }

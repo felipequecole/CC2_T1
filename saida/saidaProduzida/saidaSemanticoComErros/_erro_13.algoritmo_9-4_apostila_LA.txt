@@ -1,1 +1,9 @@
+Escopo: Funcao|Procedimento
+   valor1(inteiro)
+   valor2(inteiro)
+Escopo: Funcao|Procedimento
+   valor1(real)
+   valor2(real)
+Escopo: Funcao|Procedimento
+   valor(real)
 Fim da compilacao

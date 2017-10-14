@@ -1,1 +1,2 @@
+Linha 16: identificador preco_final nao declarado
 Fim da compilacao
