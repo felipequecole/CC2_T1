@@ -138,6 +138,8 @@ public class AnalisadorSemantico extends LABaseVisitor{
       if(tipoToken==LAParser.CADEIA){
         if(tipoExp.equals(""))
           tipoExp="literal";
+        if(tipoExp.equals("inteiro")||tipoExp.equals("real"))
+          return "erro";
       }else if(tipoToken==LAParser.NUM_INT){
         if(tipoExp.equals("") || tipoExp.equals("literal"))
           tipoExp="inteiro";
@@ -356,12 +358,20 @@ public class AnalisadorSemantico extends LABaseVisitor{
     if(ctx.chamada_atribuicao()!=null){
       String tipo=(String)tipo_expressao(ctx.chamada_atribuicao().expressao());
       //System.out.println(escopos.getTipoSimbolo(ctx.IDENT().getText())+" a "+ tipo);
-      boolean atribInvalida=!tipo.equals(escopos.getTipoSimbolo(ctx.IDENT().getText()));
+      String tipoVar = escopos.getTipoSimbolo(ctx.IDENT().getText());
+      boolean atribInvalida =! tipo.equals(tipoVar);
+
+      if(tipoVar.equals("real")&&tipo.equals("inteiro"))
+        atribInvalida=false;
+
       if(escopos.getTipoSimbolo(ctx.IDENT().getText())==null)
         atribInvalida=false;
+
       if(tipo.equals(""))
         atribInvalida=true;
       //System.out.println(ctx.IDENT().getText());
+      if(tipo.equals("erro"))
+        atribInvalida=true;
       if(atribInvalida){
         Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
               ": atribuicao nao compativel para "+ ctx.IDENT().getText());
