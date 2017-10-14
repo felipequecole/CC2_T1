@@ -63,13 +63,9 @@ public class AnalisadorSemantico extends LABaseVisitor{
           String LL = (String) aux.getIdentificador();
 
           if(LG.equals(LL)){
-            if(listaPFC.get(i).getLista().equals(aux.getLista())){
-              System.out.println("Chamada: "+ctx.IdentChamada.getText() + " --ok--");
-            }else{
-              System.out.println("Chamada: "+ctx.IdentChamada.getText() + " --erro--");
+            if(!listaPFC.get(i).getLista().equals(aux.getLista())){
               Saida.println("Linha "+ctx.getStart().getLine() + ": incompatibilidade de " +
-                      "parametros na chamada de  " + ctx.IdentChamada.getText());
-
+                      "parametros na chamada de " + ctx.IdentChamada.getText());
             }
           }
         }
