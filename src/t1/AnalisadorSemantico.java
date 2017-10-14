@@ -67,15 +67,13 @@ public class AnalisadorSemantico extends LABaseVisitor{
               System.out.println("Chamada: "+ctx.IdentChamada.getText() + " --ok--");
             }else{
               System.out.println("Chamada: "+ctx.IdentChamada.getText() + " --erro--");
+              Saida.println("Linha "+ctx.getStart().getLine() + ": incompatibilidade de " +
+                      "parametros na chamada de  " + ctx.IdentChamada.getText());
+
             }
           }
         }
-        /*
-        if( i == -1){
-          Saida.println("Linha "+ctx.getStart().getLine() + ": incompatibilidade de " +
-                  "parametros na chamada de  " + ctx.IdentChamada.getText());
-        }
-        */
+
       }if(ctx.outros_ident() != null){
         visitOutros_ident(ctx.outros_ident());
       }if(ctx.dimensao() != null){
