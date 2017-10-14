@@ -361,17 +361,16 @@ public class AnalisadorSemantico extends LABaseVisitor{
       String tipoVar = escopos.getTipoSimbolo(ctx.IDENT().getText());
       boolean atribInvalida =! tipo.equals(tipoVar);
 
-      if(tipoVar.equals("real")&&tipo.equals("inteiro"))
+      if(tipoVar==null)
         atribInvalida=false;
-
-      if(escopos.getTipoSimbolo(ctx.IDENT().getText())==null)
+      else if(tipo.equals(""))
+        atribInvalida=true;
+      else if(tipoVar.equals("real")&&tipo.equals("inteiro"))
         atribInvalida=false;
+      else if(tipo.equals("erro"))
+        atribInvalida=true;
 
-      if(tipo.equals(""))
-        atribInvalida=true;
-      //System.out.println(ctx.IDENT().getText());
-      if(tipo.equals("erro"))
-        atribInvalida=true;
+
       if(atribInvalida){
         Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
               ": atribuicao nao compativel para "+ ctx.IDENT().getText());
