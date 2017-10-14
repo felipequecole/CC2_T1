@@ -23,14 +23,14 @@ public class AnalisadorSemantico extends LABaseVisitor {
     TabelaDeSimbolos atualTipo = escoposTipo.topo();
     //System.out.println((String) tipo_expressao(ctx));
     //System.out.println("teste: "+ctx.getStop().getText());
-    System.out.println("a: "+ctx.getSourceInterval().a+" b: "+ctx.getSourceInterval().b);
+   //git  System.out.println("a: "+ctx.getSourceInterval().a+" b: "+ctx.getSourceInterval().b);
     for (int i = ctx.getSourceInterval().a; i <= ctx.getSourceInterval().b; i++) {
       Token token = cts.get(i);
       if (token.getType() == LAParser.IDENT) {
         String simbolo = token.getText();
         String stop = ctx.getStop().getText();
         //System.out.println("type: "+token);
-        System.out.println("simbolo: " + simbolo + " stop: " + stop);
+        //System.out.println("simbolo: " + simbolo + " stop: " + stop);
         if (ctx.escreva){
           if (!simbolo.equals(stop) && ctx.getSourceInterval().b - ctx.getSourceInterval().a == 2 /* && alguma coisa */) {
             //System.out.println("simbolo: " + simbolo + " getText: " + stop);
