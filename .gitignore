@@ -4,4 +4,6 @@ gen
 *.class
 saida/*
 t1/*
-*.iml
+saida/*
+t1/*
+.gitignore

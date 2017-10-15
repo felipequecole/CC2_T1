@@ -17,8 +17,10 @@ public class GeradorDeCodigo extends LABaseListener {
     private String buffer = "";
     private boolean switchCase = false;
     private boolean switchDefault = false;
+    private boolean declaraRegistro = false;
     private int ci = 0; //contador de identacao
     private PilhaDeTabelas pilhaDeTabelas = new PilhaDeTabelas();
+    private TabelaDeSimbolos funcoes = new TabelaDeSimbolos("funcoes");
     public GeradorDeCodigo(){
         saida = "";
     }
@@ -59,7 +61,7 @@ public class GeradorDeCodigo extends LABaseListener {
 
     public void testaGerador(){
         String entrada = "/home/felipequecole/IdeaProjects/T1_CC2/casosDeTesteT1/";
-        entrada+= "3.arquivos_sem_erros/ENTRADA/14.alg";
+        entrada+= "3.arquivos_sem_erros/ENTRADA/17.alg";
         ANTLRInputStream input = null;
         try {
             input = new ANTLRInputStream(new FileInputStream(entrada));
@@ -109,7 +111,7 @@ public class GeradorDeCodigo extends LABaseListener {
     @Override
     public void enterPrograma(LAParser.ProgramaContext ctx) {
         println("#include<stdio.h>\n#include<stdlib.h>");
-        pilhaDeTabelas.empilhar(new TabelaDeSimbolos("global"));
+        pilhaDeTabelas.empilhar(new TabelaDeSimbolos("main"));
         System.out.println("Entrou no programa");
     }
 
@@ -117,6 +119,7 @@ public class GeradorDeCodigo extends LABaseListener {
     @Override
     public void enterCorpo(LAParser.CorpoContext ctx) {
 //        System.out.println("Entrou no corpo");
+        println("");
         println("int main() {");
         ci++;
     }
@@ -132,7 +135,57 @@ public class GeradorDeCodigo extends LABaseListener {
 
     @Override
     public void enterDecl_local_global(LAParser.Decl_local_globalContext ctx) {
-        super.enterDecl_local_global(ctx);
+//        super.enterDecl_local_global(ctx);
+    }
+
+    @Override
+    public void enterDeclaracao_global(LAParser.Declaracao_globalContext ctx) {
+        pilhaDeTabelas.empilhar(new TabelaDeSimbolos("global"));
+        String token = ctx.getStart().getText();
+        String nome_procfunc = ctx.IDENT().getText();
+        println("");
+        switch (token){
+            case "procedimento":
+                identar();
+                print("void " + nome_procfunc + " ");
+                break;
+            case "funcao":
+                identar();
+                String tipo_retorno = ctx.tipo_estendido().getText();
+                print(getTipoEmC(tipo_retorno) + " " + nome_procfunc + " ");
+                funcoes.adicionarSimbolo(nome_procfunc, tipo_retorno);
+                System.out.println(ctx.getText());
+
+                break;
+        }
+    }
+
+    @Override
+    public void exitDeclaracao_global(LAParser.Declaracao_globalContext ctx) {
+        println("}");
+    }
+
+    @Override
+    public void enterParametros_opcional(LAParser.Parametros_opcionalContext ctx) {
+        print("(");
+    }
+
+    @Override
+    public void exitParametros_opcional(LAParser.Parametros_opcionalContext ctx) {
+        println(") {");
+        this.ci++;
+    }
+
+    @Override
+    public void enterParametro(LAParser.ParametroContext ctx) {
+        String id = ctx.identificador().IDENT().getText();
+        String tipo = ctx.tipo_estendido().getText();
+        pilhaDeTabelas.topo().adicionarSimbolo(id, tipo);
+        if(!tipo.equals("literal")) {
+            print(getTipoEmC(tipo) + " " + id);
+        } else {
+            print(getTipoEmC(tipo) + " " + id + "[100]");
+        }
     }
 
     @Override
@@ -147,17 +200,38 @@ public class GeradorDeCodigo extends LABaseListener {
                 break;
             case "declare":
                 identar();
-                print(getTipoEmC(ctx.variavel().tipo().getText()) + " ");
+                if (ctx.variavel().tipo().getText().contains("^")){
+                    print(getTipoEmC(ctx.variavel().tipo().getText()).replace("^", "") + "* ");
+                } else if (ctx.variavel().tipo().registro()== null && !declaraRegistro){
+                    print(getTipoEmC(ctx.variavel().tipo().getText()) + " ");
+                    declaraRegistro = true;
+                }
                 // o resto é feito no listener da variavel
         }
     }
 
 
     @Override
+    public void enterRegistro(LAParser.RegistroContext ctx) {
+        System.out.println("Registro!");
+    }
+
+    @Override
+    public void exitRegistro(LAParser.RegistroContext ctx) {
+        declaraRegistro = false;
+    }
+
+    @Override
     public void enterVariavel(LAParser.VariavelContext ctx) {
-        pilhaDeTabelas.topo().adicionarSimbolo(ctx.IDENT().getText(), ctx.tipo().getText());
-        for (LAParser.Mais_varContext mais_var : ctx.lista_mais_var) {
-            pilhaDeTabelas.topo().adicionarSimbolo(mais_var.IDENT().getText(), ctx.tipo().getText());
+        if (ctx.tipo().registro() == null) {
+            pilhaDeTabelas.topo().adicionarSimbolo(ctx.IDENT().getText(), ctx.tipo().getText());
+            for (LAParser.Mais_varContext mais_var : ctx.lista_mais_var) {
+                pilhaDeTabelas.topo().adicionarSimbolo(mais_var.IDENT().getText(), ctx.tipo().getText());
+            }
+        } else {
+            if (ctx.tipo().registro().mais_variaveis() != null) {
+                System.out.println(ctx.tipo().registro().mais_variaveis().getText());
+            }
         }
     }
 
@@ -168,7 +242,7 @@ public class GeradorDeCodigo extends LABaseListener {
         if (ctx.tipo().getText().equals("literal")){
             print("[100]");
         }
-        if(ctx.dimensao() != null) {
+        if(ctx.dimensao() != null && !dimensao.equals("[") && !dimensao.equals("[]")) {
             print(dimensao);
         }
         for (LAParser.Mais_varContext mais_var : ctx.lista_mais_var) {
@@ -176,7 +250,7 @@ public class GeradorDeCodigo extends LABaseListener {
             if(ctx.tipo().getText().equals("literal")){
                 print("[100]");
             }
-            if (mais_var.dimensao() != null){
+            if (mais_var.dimensao() != null && !dimensao.equals("[")){
                 //todo pode causar problemas.
                 print(dimensao);
             }
@@ -187,16 +261,15 @@ public class GeradorDeCodigo extends LABaseListener {
     @Override
     public void enterDimensao(LAParser.DimensaoContext ctx) {
 //        System.out.println("entrou dimensao");
-        if(ctx.dimensao() != null) {
-            dimensao = "[";
-        }
-
+        dimensao = "";
+        dimensao = "[";
     }
 
     @Override
     public void exitDimensao(LAParser.DimensaoContext ctx) {
 //        System.out.println("saiu dimensao");
-        if(ctx.dimensao() != null) {
+        System.out.println(ctx.dimensao() != null);
+        if(ctx.exp_aritmetica() != null) {
             dimensao += ctx.exp_aritmetica().getText();
             dimensao += "]";
         }
@@ -231,7 +304,25 @@ public class GeradorDeCodigo extends LABaseListener {
             identar();
             print("printf(");
             String id = ctx.expressao().getText();
-            String tipo = pilhaDeTabelas.topo().getTipo(id);
+            String tipo_id = id;
+            System.out.println(id);
+            if(id.contains("[")){
+                String[] split = id.split("\\[");
+                String[] split_2 = split[1].split("]");
+                try {
+                    tipo_id = split[0] + split_2[1];
+                } catch (IndexOutOfBoundsException e) {
+                    tipo_id = split[0];
+                }
+            } else if (id.contains("(")) {
+                String[] split = id.split("\\(");
+                tipo_id = split[0];
+            }
+            System.out.println(tipo_id);
+            String tipo = pilhaDeTabelas.topo().getTipo(tipo_id);
+            if (tipo.equals("null")) {
+                tipo = funcoes.getTipo(tipo_id);
+            }
             switch (tipo) {
                 case "literal":
                     print("\"" + getTagC(tipo));
@@ -312,8 +403,14 @@ public class GeradorDeCodigo extends LABaseListener {
                 this.buffer = "";
                 enterMais_expressao(ctx.mais_expressao());
                 if (!tratado) {
-                    print("\\n\", " + id);
-                    println(");");
+                    System.out.println(buffer);
+                    if(buffer.equals("")) {
+                        print("\\n\", " + id);
+                        println(");");
+                    } else {
+                        print(buffer.replace("\"", "").replace("$$", "") + "\", " + id);
+                        println(");");
+                    }
                 }
 
             } else {
@@ -349,22 +446,39 @@ public class GeradorDeCodigo extends LABaseListener {
             println("do {");
             ci++;
         } else if (ctx.getText().contains("^")) {
-            //todo comando elevado
+            identar();
+            print("*" + ctx.IDENT().getText());
+            if(ctx.dimensao() != null && !dimensao.equals("[]") && !dimensao.equals("[")) {
+                print(dimensao);
+            }
+            println(" = " + ctx.expressao().getText() + ";");
         } else if (ctx.getText().contains("<-")) { //atribuicao
             identar();
             print(ctx.IDENT().getText());
+
 //            if (ctx.chamada_atribuicao().expressao() != null) {
 //                println(ctx.IDENT().getText() + " = " + ctx.chamada_atribuicao().expressao().getText() + ";");
 //            } else {
 //                println("calma fera");
 //            }
+        } else if (token.equals("retorne")) {
+            identar();
+            println("return " + ctx.expressao().getText() + ";");
+        } else { //chamada de funcao ou procedimento
+            identar();
+            println(ctx.getText() + ";");
         }
     }
 
 
     @Override
     public void enterChamada_atribuicao(LAParser.Chamada_atribuicaoContext ctx) {
-        println(" = " + ctx.expressao().getText() + ";");
+        if(ctx.dimensao()!= null) {
+            print(ctx.dimensao().getText());
+        }
+        if(ctx.expressao() != null) {
+            println(" = " + ctx.expressao().getText() + ";");
+        }
     }
 
     @Override
@@ -507,7 +621,7 @@ public class GeradorDeCodigo extends LABaseListener {
 
     @Override
     public void exitPrograma(LAParser.ProgramaContext ctx) {
-        System.out.println("Saiu do programa");
+//        System.out.println("Saiu do programa");
         System.out.println(saida);
     }
 
