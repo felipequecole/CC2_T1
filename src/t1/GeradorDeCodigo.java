@@ -17,7 +17,6 @@ public class GeradorDeCodigo extends LABaseListener {
     private String buffer = "";
     private boolean switchCase = false;
     private boolean switchDefault = false;
-    private boolean declaraRegistro = false;
     private int ci = 0; //contador de identacao
     private PilhaDeTabelas pilhaDeTabelas = new PilhaDeTabelas();
     private TabelaDeSimbolos funcoes = new TabelaDeSimbolos("funcoes");
@@ -61,7 +60,7 @@ public class GeradorDeCodigo extends LABaseListener {
 
     public void testaGerador(){
         String entrada = "/home/felipequecole/IdeaProjects/T1_CC2/casosDeTesteT1/";
-        entrada+= "3.arquivos_sem_erros/ENTRADA/17.alg";
+        entrada+= "3.arquivos_sem_erros/ENTRADA/18.alg";
         ANTLRInputStream input = null;
         try {
             input = new ANTLRInputStream(new FileInputStream(entrada));
@@ -202,9 +201,9 @@ public class GeradorDeCodigo extends LABaseListener {
                 identar();
                 if (ctx.variavel().tipo().getText().contains("^")){
                     print(getTipoEmC(ctx.variavel().tipo().getText()).replace("^", "") + "* ");
-                } else if (ctx.variavel().tipo().registro()== null && !declaraRegistro){
+                } else {
                     print(getTipoEmC(ctx.variavel().tipo().getText()) + " ");
-                    declaraRegistro = true;
+
                 }
                 // o resto é feito no listener da variavel
         }
@@ -212,26 +211,10 @@ public class GeradorDeCodigo extends LABaseListener {
 
 
     @Override
-    public void enterRegistro(LAParser.RegistroContext ctx) {
-        System.out.println("Registro!");
-    }
-
-    @Override
-    public void exitRegistro(LAParser.RegistroContext ctx) {
-        declaraRegistro = false;
-    }
-
-    @Override
     public void enterVariavel(LAParser.VariavelContext ctx) {
-        if (ctx.tipo().registro() == null) {
-            pilhaDeTabelas.topo().adicionarSimbolo(ctx.IDENT().getText(), ctx.tipo().getText());
-            for (LAParser.Mais_varContext mais_var : ctx.lista_mais_var) {
-                pilhaDeTabelas.topo().adicionarSimbolo(mais_var.IDENT().getText(), ctx.tipo().getText());
-            }
-        } else {
-            if (ctx.tipo().registro().mais_variaveis() != null) {
-                System.out.println(ctx.tipo().registro().mais_variaveis().getText());
-            }
+        pilhaDeTabelas.topo().adicionarSimbolo(ctx.IDENT().getText(), ctx.tipo().getText());
+        for (LAParser.Mais_varContext mais_var : ctx.lista_mais_var) {
+            pilhaDeTabelas.topo().adicionarSimbolo(mais_var.IDENT().getText(), ctx.tipo().getText());
         }
     }
 
