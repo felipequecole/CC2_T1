@@ -75,7 +75,7 @@ public class GeradorDeCodigo extends LABaseListener {
 
     public void testaGerador(){
         String entrada = "/home/felipequecole/IdeaProjects/T1_CC2/casosDeTesteT1/";
-        entrada+= "3.arquivos_sem_erros/ENTRADA/16.alg";
+        entrada+= "3.arquivos_sem_erros/ENTRADA/17.alg";
         ANTLRInputStream input = null;
         try {
             input = new ANTLRInputStream(new FileInputStream(entrada));
@@ -221,6 +221,9 @@ public class GeradorDeCodigo extends LABaseListener {
                 print(" " + ctx.IDENT().getText() + " = ");
                 println(ctx.valor_constante().getText() + ";");
                 break;
+            case "tipo":
+                identar();
+                print("typedef");
 //            case "declare":
 //                identar();
 //                if (ctx.variavel().tipo().registro() == null) {
@@ -240,6 +243,14 @@ public class GeradorDeCodigo extends LABaseListener {
     }
 
 
+    @Override
+    public void exitDeclaracao_local(LAParser.Declaracao_localContext ctx) {
+        String token = ctx.getStart().getText();
+        switch (token) {
+            case "tipo":
+                println(ctx.IDENT().getText() + ";");
+        }
+    }
 
     @Override
     public void enterVariavel(LAParser.VariavelContext ctx) {
@@ -497,18 +508,6 @@ public class GeradorDeCodigo extends LABaseListener {
             identar();
             println("do {");
             ci++;
-//        } else if (ctx.getText().contains("^")) {
-//            identar();
-//            print("*" + ctx.IDENT().getText());
-//            //ctx.dimensao() != null &&
-//            if(!dimensao.equals("[]") && !dimensao.equals("[")) {
-//                print(dimensao);
-//            }
-//            if (ctx.expressao() != null) {
-//                println(" = " + ctx.expressao().getText() + ";");
-//            } else {
-//                println(";");
-//            }
         } else if (ctx.getText().contains("<-")) { //atribuicao
             identar();
             this.atribuicao = true;
@@ -521,11 +520,6 @@ public class GeradorDeCodigo extends LABaseListener {
                 print(ctx.IDENT().getText());
             }
 
-//            if (ctx.chamada_atribuicao().expressao() != null) {
-//                println(ctx.IDENT().getText() + " = " + ctx.chamada_atribuicao().expressao().getText() + ";");
-//            } else {
-//                println("calma fera");
-//            }
         } else if (token.equals("retorne")) {
             identar();
             println("return " + ctx.expressao().getText() + ";");
