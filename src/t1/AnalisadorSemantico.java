@@ -49,11 +49,11 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitParcela_unario(LAParser.Parcela_unarioContext ctx) {
+    int aux2 = 0;
     if(ctx != null){
       if((ctx.chamada_partes() != null)&&(ctx.chamada_partes().expressao()!= null)){
         //Criando lista de parametros da função
         ParametrosFuncProc aux = new ParametrosFuncProc(ctx.IdentChamada.getText());
-        System.out.println("------"+ctx.IdentChamada.getText()+"------");
         aux.setLista((ArrayList<String>) visitChamada_partes(ctx.chamada_partes()));
 
         //Verificando se a lista é correspondente a lista global
@@ -232,12 +232,8 @@ public class AnalisadorSemantico extends LABaseVisitor{
         }
 
         int i = listaPFC.indexOf(ListParametros);
-        System.out.println(i);
         listaPFC.get(i).setLista(aux);
 
-        for(int j = 0;j<listaPFC.get(i).getLista().size();j++){
-          System.out.println(listaPFC.get(i).getLista().get(j));
-        }
         //visitando os comandos
         if(ctx.comandos() != null){
           visitComandos(ctx.comandos());
@@ -328,15 +324,6 @@ public class AnalisadorSemantico extends LABaseVisitor{
     return listaDeParametros;
   }
 
-  /*  @Override
-  public Object visitComandos(LAParser.ComandosContext ctx) {
-      if(ctx.cmd() !=null){
-        visitCmd(ctx.cmd());
-      }
-
-    return null;
-  }*/
-
   @Override
   public Object visitCmd(LAParser.CmdContext ctx) {
 
@@ -386,8 +373,15 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
 
       if(atribInvalida){
-        Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
-              ": atribuicao nao compativel para "+ var);
+        if(ctx.chamada_atribuicao().dimensao().exp_aritmetica() != null){
+          String v = ctx.chamada_atribuicao().dimensao().exp_aritmetica().termo().fator().parcela().parcela_unario().NUM_INT().getText();
+          Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
+                  ": atribuicao nao compativel para "+ var + "["+v+"]");
+        }else{
+          Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
+                  ": atribuicao nao compativel para "+ var);
+        }
+
       }
     }else  if((ctx.expReturn != null)&&(escopos.topo().getEscopo() != "Funcao")){
         Saida.println("Linha "+ctx.getStart().getLine() + ": comando retorne nao permitido nesse escopo");
@@ -449,12 +443,13 @@ public class AnalisadorSemantico extends LABaseVisitor{
     return null;
   }
 
+
   @Override
   public Object visitVariavel(LAParser.VariavelContext ctx) {
     String tipo = (String) visitTipo(ctx.tipo());
     TabelaDeSimbolos atualTipo = escoposTipo.topo();
     TabelaDeSimbolos atual = escopos.topo();
-//   EntradaTabelaDeSimbolos etds = new EntradaTabelaDeSimbolos();
+
     String simbolo = ctx.IDENT().getText();
     if(!atual.existeSimbolo(simbolo)&&(!atualTipo.existeSimbolo(simbolo))){
       atual.adicionarSimbolo(simbolo, tipo);
@@ -469,7 +464,6 @@ public class AnalisadorSemantico extends LABaseVisitor{
         atual.adicionarSimbolo(simbolo, tipo);
       } else {
         Saida.println("Linha "+ct.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
-
       }
     }
 
