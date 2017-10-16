@@ -30,7 +30,7 @@ variavel [boolean reg] : IDENT dimensao lista_mais_var+= mais_var [reg] * ':' ti
 mais_var [boolean reg]  : ',' IDENT dimensao ;
 identificador [boolean reg] : ponteiros_opcionais IDENT dimensao outros_ident;
 ponteiros_opcionais : '^' ponteiros_opcionais |;
-outros_ident : '.' lista_outrosIdent += identificador [reg]*|;
+outros_ident : '.' lista_outrosIdent += identificador [reg]|;
 dimensao : '[' exp_aritmetica ']' dimensao|;
 tipo : registro | tipo_estendido;
 //mais_ident : ',' identificador mais_ident |;
