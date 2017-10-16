@@ -324,15 +324,6 @@ public class AnalisadorSemantico extends LABaseVisitor{
     return listaDeParametros;
   }
 
-  /*  @Override
-  public Object visitComandos(LAParser.ComandosContext ctx) {
-      if(ctx.cmd() !=null){
-        visitCmd(ctx.cmd());
-      }
-
-    return null;
-  }*/
-
   @Override
   public Object visitCmd(LAParser.CmdContext ctx) {
 
@@ -465,18 +456,6 @@ public class AnalisadorSemantico extends LABaseVisitor{
     } else {
       Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
     }
-
-    /*else{
-      for(int i = 0; i<20; i++){
-        simbolo = simbolo + "["+i+"]";
-
-        if(!atual.existeSimbolo(simbolo)&&(!atualTipo.existeSimbolo(simbolo))){
-          atual.adicionarSimbolo(simbolo, tipo);
-        } else {
-          Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
-        }
-      }
-    }*/
 
     for(LAParser.Mais_varContext ct: ctx.lista_mais_var){
       simbolo = ct.IDENT().getText();
