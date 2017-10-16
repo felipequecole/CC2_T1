@@ -348,6 +348,8 @@ public class AnalisadorSemantico extends LABaseVisitor{
     return null;
   }*/
 
+
+
   @Override
   public Object visitCmd(LAParser.CmdContext ctx) {
 
@@ -368,6 +370,10 @@ public class AnalisadorSemantico extends LABaseVisitor{
         }
       }
     if(ctx.chamada_atribuicao()!=null){
+      String simbolo = ctx.IDENT().getText();
+      if (ctx.chamada_atribuicao().outros_ident() != null) {
+        simbolo += visitOutros_ident(ctx.chamada_atribuicao().outros_ident());
+      }
       String tipo=(String)tipo_expressao(ctx.chamada_atribuicao().expressao());
       //System.out.println(escopos.getTipoSimbolo(ctx.IDENT().getText())+" a "+ tipo);
       boolean atribInvalida=!tipo.equals(escopos.getTipoSimbolo(ctx.IDENT().getText()));
@@ -378,7 +384,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
       //System.out.println(ctx.IDENT().getText());
       if(atribInvalida){
         Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
-              ": atribuicao nao compativel para "+ ctx.IDENT().getText());
+              ": atribuicao nao compativel para "+ simbolo);
       }
     }else  if((ctx.expReturn != null)&&(escopos.topo().getEscopo() != "Funcao")){
         Saida.println("Linha "+ctx.getStart().getLine() + ": comando retorne nao permitido nesse escopo");
@@ -513,10 +519,10 @@ public class AnalisadorSemantico extends LABaseVisitor{
         //System.out.println("entrou aqui");
         tabelaRegistro.adicionarSimbolo(simbolo, tipo);
         //System.out.println("simbolo: "+simbolo+" tipo: "+tipo);
-      } else if (atual.getTipo(simbolo) == "registro") { //pra não inserir as variaveis padrão do registro na hora que ele for definido
+      } else if (atual.getTipo(simbolo).equals("registro")) { //pra não inserir as variaveis padrão do registro na hora que ele for definido
         for (EntradaTabelaDeSimbolos e : tabelaRegistro.getSimbolos()) {
-          System.out.println("simbolo struct: " + simbolo + e.getNome() + "tipo: " + e.getTipo());
-          atual.adicionarSimbolo(simbolo + e.getNome(), e.getTipo());
+          //System.out.println("simbolo struct: " + simbolo +"."+ e.getNome() + " tipo: " + e.getTipo());
+          atual.adicionarSimbolo(simbolo +"."+ e.getNome(), e.getTipo());
         }
       }
     } else {
@@ -532,15 +538,21 @@ public class AnalisadorSemantico extends LABaseVisitor{
         System.out.println("simbolo com struct virgula = "+simbolo);
       }
       */
+        //System.out.println("simbolo: "+ simbolo+ " tipo: "+tipo);
         if (!atual.existeSimbolo(simbolo) && (!atualTipo.existeSimbolo(simbolo))) {
           atual.adicionarSimbolo(simbolo, tipo);
+          //System.out.println("mais var");
           //System.out.println("mais var  simbolo: "+simbolo+" tipo: "+tipo);
           //System.out.println("qual eh: "+atualTipo.getTipo(tipo));
-          if (ctx.reg) {
-            //System.out.println("entrou aqui i");
+          //System.out.println(ctx.reg || atual.getTipo(simbolo) == "registro");
+          if (ctx.reg || atual.getTipo(simbolo) == "registro") {
             tabelaRegistro.adicionarSimbolo(simbolo, tipo);
-            //System.out.println("mais var  simbolo: "+simbolo+" tipo: "+tipo);
-          } else if (atualTipo.getTipo(tipo) == "registro") { //pra não inserir as variaveis padrão do registro na hora que ele for definido
+            for (EntradaTabelaDeSimbolos e : tabelaRegistro.getSimbolos()) {
+              //System.out.println("simbolo struct: "+simbolo+"."+e.getNome()+" tipo: "+e.getTipo());
+              atual.adicionarSimbolo(simbolo + "." + e.getNome(), e.getTipo());
+            }
+
+          } else if (atualTipo.getTipo(tipo).equals("registro")) { //pra não inserir as variaveis padrão do registro na hora que ele for definido
             for (EntradaTabelaDeSimbolos e : tabelaRegistro.getSimbolos()) {
               //System.out.println("simbolo struct: "+simbolo+"."+e.getNome()+" tipo: "+e.getTipo());
               atual.adicionarSimbolo(simbolo + "." + e.getNome(), e.getTipo());
@@ -602,7 +614,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
         //  ctx.reg = "";
         return visitTipo_estendido(ctx.tipo_estendido());
       } else if (ctx.registro() != null) {
-        System.out.println("entra registro");
+        //System.out.println("entra registro");
         return visitRegistro(ctx.registro());
       }
     }
