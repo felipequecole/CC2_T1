@@ -108,6 +108,10 @@ public class GeradorDeCodigo extends LABaseListener {
         }
     }
 
+    private boolean temDimensao(){
+        return !(this.dimensao.equals("[") || this.dimensao.equals("[]"));
+    }
+
     @Override
     public void enterPrograma(LAParser.ProgramaContext ctx) {
         println("#include<stdio.h>\n#include<stdlib.h>");
@@ -227,9 +231,11 @@ public class GeradorDeCodigo extends LABaseListener {
 //        System.out.println("Saiu variavel");
         print(ctx.IDENT().getText());
         if (ctx.tipo().getText().equals("literal")){
+            // Não existe "String" em C, apenas vetor de caracteres
+            // Optamos por adotar tamanho padrão 100
             print("[100]");
         }
-        if(ctx.dimensao() != null && !dimensao.equals("[") && !dimensao.equals("[]")) {
+        if(ctx.dimensao() != null && temDimensao()) {
             print(dimensao);
         }
         for (LAParser.Mais_varContext mais_var : ctx.lista_mais_var) {
@@ -237,7 +243,7 @@ public class GeradorDeCodigo extends LABaseListener {
             if(ctx.tipo().getText().equals("literal")){
                 print("[100]");
             }
-            if (mais_var.dimensao() != null && !dimensao.equals("[")){
+            if (mais_var.dimensao() != null && temDimensao()){
                 //todo pode causar problemas.
                 print(dimensao);
             }
