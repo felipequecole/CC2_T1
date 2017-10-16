@@ -10,8 +10,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class AnalisadorSemantico extends LABaseVisitor{
+  //escopo que comporta variaveis
   PilhaDeTabelas escopos = new PilhaDeTabelas();
+  //escopo que comporta tipo, constantes, nomes de funções e simbolos gerais
   PilhaDeTabelas escoposTipo = new PilhaDeTabelas();
+  //Lista que contem listas com todos os parametros de uma função ou procedimento
+  /*ParametrosFuncProc é uma classe que comporta uma lista de parametros e um String
+  que serve para identificar qual lista é de qual função ou procedimento*/
   ArrayList<ParametrosFuncProc> listaPFC= new ArrayList<ParametrosFuncProc>();
 
 
@@ -21,7 +26,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
   }
 
   public Object visitExpressao(LAParser.ExpressaoContext ctx){
-  //  System.out.println((String) tipo_expressao(ctx));
+    //  System.out.println((String) tipo_expressao(ctx));
     for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
       Token token=cts.get(i);
       if(token.getType()==LAParser.IDENT){
@@ -49,7 +54,6 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitParcela_unario(LAParser.Parcela_unarioContext ctx) {
-    int aux2 = 0;
     if(ctx != null){
       if((ctx.chamada_partes() != null)&&(ctx.chamada_partes().expressao()!= null)){
         //Criando lista de parametros da função
@@ -83,8 +87,9 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitChamada_partes(LAParser.Chamada_partesContext ctx) {
+    //Lista auxiliar que contem todos os parametros passados para a função na hora de sua chamada
     ArrayList<String> aux = new ArrayList<String>();
-
+    //Adicionando os parametros a lista
     if(ctx != null){
       if(ctx.expressao() != null){
         aux.add((String)tipo_expressao(ctx.expressao()));
@@ -94,7 +99,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
         }
       }
     }
-
+    //retornando a lista com os parametros adicionados
     return aux;//super.visitChamada_partes(ctx);
   }
 
@@ -167,20 +172,20 @@ public class AnalisadorSemantico extends LABaseVisitor{
     escopos.empilhar(new TabelaDeSimbolos("local"));
     //Visitando comando
 
-          visitDeclaracoes_locais(ctx.declaracoes_locais());
-          visitComandos(ctx.comandos());
+    visitDeclaracoes_locais(ctx.declaracoes_locais());
+    visitComandos(ctx.comandos());
     return null;
   }
 
-    @Override
-    public Object visitDeclaracoes_locais(LAParser.Declaracoes_locaisContext ctx) {
-        for (LAParser.Declaracao_localContext ct : ctx.declocais){
-          visitDeclaracao_local(ct);
-        }
-        return null;
+  @Override
+  public Object visitDeclaracoes_locais(LAParser.Declaracoes_locaisContext ctx) {
+    for (LAParser.Declaracao_localContext ct : ctx.declocais){
+      visitDeclaracao_local(ct);
     }
+    return null;
+  }
 
-    @Override
+  @Override
   public Object visitDeclaracoes(LAParser.DeclaracoesContext ctx) {
 
     for(LAParser.Decl_local_globalContext ct : ctx.lista_DeclLocalGlobal){
@@ -213,6 +218,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
       //verifica que é uma função
       if(ctx.tipo_estendido() != null){
         String tipo = ctx.tipo_estendido().getText();
+        //verifica se o simbolo não esta em nenhum dos escopos
         if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
           atualTipo.adicionarSimbolo(simbolo,tipo);
         }else{
@@ -222,16 +228,20 @@ public class AnalisadorSemantico extends LABaseVisitor{
         //escopo de um funcao
         escopos.empilhar(new TabelaDeSimbolos("Funcao"));
 
-        //adicionando os parametros
+        //adicionando a lista parametros na lista de listas
         ParametrosFuncProc ListParametros = new ParametrosFuncProc(ctx.IDENT().getText());
         listaPFC.add(ListParametros);
+        //Lista auxiliar
         ArrayList<String> aux = new ArrayList<String>();
 
         if(ctx.parametros_opcional()!=null){
+          /*Obtendo o retorno da lista que contem todos os parametros encontrados na
+           declaração da função*/
           aux = (ArrayList<String>) visitParametros_opcional(ctx.parametros_opcional());
         }
-
+        //encontrando a lista de parametros atual
         int i = listaPFC.indexOf(ListParametros);
+        //adicionando ela na lista de listas
         listaPFC.get(i).setLista(aux);
 
         //visitando os comandos
@@ -243,6 +253,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
         // é um procedimento
       }else {
+        //verifica se o simbolo não esta em nenhum dos escopos
         if ((!escopos.existeSimbolo(simbolo)) && (!escoposTipo.existeSimbolo(simbolo))) {
           atualTipo.adicionarSimbolo(simbolo, "void");
         } else {
@@ -253,9 +264,8 @@ public class AnalisadorSemantico extends LABaseVisitor{
         escopos.empilhar(new TabelaDeSimbolos("Procedimento"));
         //adicionando os parametros
 
-
         if(ctx.parametros_opcional()!=null){
-         visitParametros_opcional(ctx.parametros_opcional());
+          visitParametros_opcional(ctx.parametros_opcional());
         }
 
         //visitando os comandos
@@ -275,6 +285,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
     ArrayList<String> listaDeParametros = new ArrayList<String>();
     if(ctx != null){
       for(LAParser.ParametroContext ct: ctx.lista_parametro){
+        //Obtendo todos os parametros na declaração de uma função ou procedimento
         listaDeParametros.addAll((ArrayList<String>) visitParametro(ct));
       }
     }
@@ -329,20 +340,20 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
     if(ctx==null)
       return null;
-      //Verificando se a variavel existe na atribuição, para e ^
-      if(ctx.IDENT() != null){
-        String simbolo = ctx.IDENT().getText();
-        if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
-          Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
-        }
+    //Verificando se a variavel existe na atribuição, para e ^
+    if(ctx.IDENT() != null){
+      String simbolo = ctx.IDENT().getText();
+      if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
+        Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
       }
-        //Verificando a primeira variavel de leia
-      if(ctx.identificador()!=null){
-        String simbolo = ctx.identificador().IDENT().getText();
-        if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
-          Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
-        }
+    }
+    //Verificando a primeira variavel de leia
+    if(ctx.identificador()!=null){
+      String simbolo = ctx.identificador().IDENT().getText();
+      if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
+        Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
       }
+    }
     if(ctx.chamada_atribuicao()!=null){
 
       String tipo=(String)tipo_expressao(ctx.chamada_atribuicao().expressao());
@@ -363,17 +374,19 @@ public class AnalisadorSemantico extends LABaseVisitor{
         }
         tipoVar=tipoVar.substring(0,tipoVar.length() -ncounter);
         //System.out.println(escopos.getTipoSimbolo(ctx.IDENT().getText())+" a "+ tipo);
-      if(tipo.equals(""))
-        atribInvalida=true;
-      else if(tipoVar.equals("real")&&tipo.equals("inteiro"))
-        atribInvalida=false;
-      else if(tipo.equals("erro"))
-        atribInvalida=true;
+        if(tipo.equals(""))
+          atribInvalida=true;
+        else if(tipoVar.equals("real")&&tipo.equals("inteiro"))
+          atribInvalida=false;
+        else if(tipo.equals("erro"))
+          atribInvalida=true;
       }
 
 
       if(atribInvalida){
+        //Verificação se a variavel é um vetor
         if(ctx.chamada_atribuicao().dimensao().exp_aritmetica() != null){
+          //retorno do indice do vetor
           String v = ctx.chamada_atribuicao().dimensao().exp_aritmetica().termo().fator().parcela().parcela_unario().NUM_INT().getText();
           Saida.println("Linha " +ctx.IDENT().getSymbol().getLine()+
                   ": atribuicao nao compativel para "+ var + "["+v+"]");
@@ -384,11 +397,11 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
       }
     }else  if((ctx.expReturn != null)&&(escopos.topo().getEscopo() != "Funcao")){
-        Saida.println("Linha "+ctx.getStart().getLine() + ": comando retorne nao permitido nesse escopo");
-      }
+      Saida.println("Linha "+ctx.getStart().getLine() + ": comando retorne nao permitido nesse escopo");
+    }
     return visitChildren(ctx);
     //Verificando as demais variaveis de leia
-  //  visitMais_ident(ctx.mais_ident());
+    //  visitMais_ident(ctx.mais_ident());
     //falta verificar na expressao
   }
 
@@ -449,14 +462,14 @@ public class AnalisadorSemantico extends LABaseVisitor{
     String tipo = (String) visitTipo(ctx.tipo());
     TabelaDeSimbolos atualTipo = escoposTipo.topo();
     TabelaDeSimbolos atual = escopos.topo();
-
+    //adicionando a primeira variavel a tabela de simbolos
     String simbolo = ctx.IDENT().getText();
     if(!atual.existeSimbolo(simbolo)&&(!atualTipo.existeSimbolo(simbolo))){
       atual.adicionarSimbolo(simbolo, tipo);
     } else {
       Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
     }
-
+    //adicionando as demais variaveis a tabela de simbolos
     for(LAParser.Mais_varContext ct: ctx.lista_mais_var){
       simbolo = ct.IDENT().getText();
 
@@ -497,7 +510,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitTipo_basico_ident(LAParser.Tipo_basico_identContext ctx) {
-
+    //verificando se os novos tipos declarados existem
     if(ctx != null){
       if(ctx.tipo_basico() != null){
         return visitTipo_basico(ctx.tipo_basico());
