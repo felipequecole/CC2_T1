@@ -61,7 +61,7 @@ public class GeradorDeCodigo extends LABaseListener {
 
     public void testaGerador(){
         String entrada = "/home/felipequecole/IdeaProjects/T1_CC2/casosDeTesteT1/";
-        entrada+= "3.arquivos_sem_erros/ENTRADA/15.alg";
+        entrada+= "3.arquivos_sem_erros/ENTRADA/16.alg";
         ANTLRInputStream input = null;
         try {
             input = new ANTLRInputStream(new FileInputStream(entrada));
@@ -200,12 +200,15 @@ public class GeradorDeCodigo extends LABaseListener {
                 break;
             case "declare":
                 identar();
-                if (ctx.variavel().tipo().getText().contains("^") && false){
-                    print(getTipoEmC(ctx.variavel().tipo().getText()).replace("^", "") );
-                } else {
-                    print(getTipoEmC(ctx.variavel().tipo().getText().replace("^", "")) + " ");
-
-                }
+                print(getTipoEmC(ctx.variavel().tipo().getText().replace("^", "")) + " ");
+//
+//
+//                if (ctx.variavel().tipo().getText().contains("^") && false){
+//                    print(getTipoEmC(ctx.variavel().tipo().getText()).replace("^", "") );
+//                } else {
+//                    print(getTipoEmC(ctx.variavel().tipo().getText().replace("^", "")) + " ");
+//
+//                }
                 // o resto é feito no listener da variavel
         }
     }
