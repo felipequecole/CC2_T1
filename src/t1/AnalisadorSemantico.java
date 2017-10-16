@@ -273,6 +273,10 @@ public class AnalisadorSemantico extends LABaseVisitor{
          visitParametros_opcional(ctx.parametros_opcional());
         }
 
+        if(ctx.declaracoes_locais() != null){
+          visitDeclaracoes_locais(ctx.declaracoes_locais());
+        }
+
         //visitando os comandos
         if(ctx.comandos() != null){
           visitComandos(ctx.comandos());
@@ -287,10 +291,19 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitParametros_opcional(LAParser.Parametros_opcionalContext ctx) {
     TabelaDeSimbolos atual = escopos.topo();
+    TabelaDeSimbolos atualTipo = escoposTipo.topo();
     ArrayList<String> listaDeParametros = new ArrayList<String>();
     if(ctx != null){
       for(LAParser.ParametroContext ct: ctx.lista_parametro){
         listaDeParametros.addAll((ArrayList<String>) visitParametro(ct));
+        String parametroRegistro = ct.identificador().IDENT().getText();
+        if (atualTipo.getTipo(atual.getTipo(parametroRegistro)).equals("registro")){
+          for (EntradaTabelaDeSimbolos e : tabelaRegistro.getSimbolos()) {
+            //System.out.println("simbolo struct: "+simbolo+"."+e.getNome()+" tipo: "+e.getTipo());
+            atual.adicionarSimbolo(parametroRegistro + "." + e.getNome(), e.getTipo());
+          }
+
+        }
       }
     }
     return listaDeParametros;
@@ -498,12 +511,15 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
   @Override
   public Object visitVariavel(LAParser.VariavelContext ctx) {
+
     String tipo = (String) visitTipo(ctx.tipo());
+
     TabelaDeSimbolos atualTipo = escoposTipo.topo();
     TabelaDeSimbolos atual = escopos.topo();
 //   EntradaTabelaDeSimbolos etds = new EntradaTabelaDeSimbolos();
     //System.out.println("struct = "+ctx.reg);
     String simbolo = ctx.IDENT().getText();    //original
+
     //System.out.println("simbolo = "+simbolo);
     /*
     if (ctx.reg != ""){
@@ -514,12 +530,10 @@ public class AnalisadorSemantico extends LABaseVisitor{
 */
     if (!atual.existeSimbolo(simbolo) && (!atualTipo.existeSimbolo(simbolo))) {
       atual.adicionarSimbolo(simbolo, tipo);
-
+      //System.out.println(atual.getTipo(simbolo) == "registro");
       if (ctx.reg) {
-        //System.out.println("entrou aqui");
         tabelaRegistro.adicionarSimbolo(simbolo, tipo);
-        //System.out.println("simbolo: "+simbolo+" tipo: "+tipo);
-      } else if (atual.getTipo(simbolo).equals("registro")) { //pra não inserir as variaveis padrão do registro na hora que ele for definido
+      } else if (atual.getTipo(simbolo) == "registro" || atualTipo.getTipo(ctx.tipo().getText()) == "registro") { //pra não inserir as variaveis padrão do registro na hora que ele for definido
         for (EntradaTabelaDeSimbolos e : tabelaRegistro.getSimbolos()) {
           //System.out.println("simbolo struct: " + simbolo +"."+ e.getNome() + " tipo: " + e.getTipo());
           atual.adicionarSimbolo(simbolo +"."+ e.getNome(), e.getTipo());
@@ -548,11 +562,11 @@ public class AnalisadorSemantico extends LABaseVisitor{
           if (ctx.reg || atual.getTipo(simbolo) == "registro") {
             tabelaRegistro.adicionarSimbolo(simbolo, tipo);
             for (EntradaTabelaDeSimbolos e : tabelaRegistro.getSimbolos()) {
-              //System.out.println("simbolo struct: "+simbolo+"."+e.getNome()+" tipo: "+e.getTipo());
+              //System.out.println("simbolo struct var: "+simbolo+"."+e.getNome()+" tipo: "+e.getTipo());
               atual.adicionarSimbolo(simbolo + "." + e.getNome(), e.getTipo());
             }
 
-          } else if (atualTipo.getTipo(tipo).equals("registro")) { //pra não inserir as variaveis padrão do registro na hora que ele for definido
+          } else if (atualTipo.getTipo(tipo) == "registro") { //pra não inserir as variaveis padrão do registro na hora que ele for definido
             for (EntradaTabelaDeSimbolos e : tabelaRegistro.getSimbolos()) {
               //System.out.println("simbolo struct: "+simbolo+"."+e.getNome()+" tipo: "+e.getTipo());
               atual.adicionarSimbolo(simbolo + "." + e.getNome(), e.getTipo());
