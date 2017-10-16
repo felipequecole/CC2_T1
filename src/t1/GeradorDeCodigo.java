@@ -12,26 +12,39 @@ import java.util.HashMap;
  * Created by felipequecole on 06/10/17.
  */
 public class GeradorDeCodigo extends LABaseListener {
+    // String que contem a saida (codigo em C)
     private String saida;
+    // Buffer que contem a dimensao (em casos que existe)
     private String dimensao = "";
+    // Buffer de uso geral para comunicação entre listeners
     private String buffer = "";
+    // flags
     private boolean switchCase = false;
     private boolean switchDefault = false;
     private boolean atribuicao = false;
+    private boolean declarouRegistro = false;
+    private boolean imprimindo = false;
+    // fim das flags
+
     private int ci = 0; //contador de identacao
     private PilhaDeTabelas pilhaDeTabelas = new PilhaDeTabelas();
     private TabelaDeSimbolos funcoes = new TabelaDeSimbolos("funcoes");
+
+
     public GeradorDeCodigo(){
         saida = "";
     }
+
 
     private void print(String texto){
         this.saida += texto;
     }
 
+
     private void println(String texto){
         this.saida += texto + "\n";
     }
+
 
     private void identar() {
         for(int i = 0; i < ci; i++){
@@ -39,13 +52,13 @@ public class GeradorDeCodigo extends LABaseListener {
         }
     }
 
+
     private String getTipo(String id) {
-//        System.out.println(id + " tem tipo: "  + pilhaDeTabelas.topo().getTipo(id));
         return pilhaDeTabelas.topo().getTipo(id);
     }
 
+
     private String getTagC(String tipo) {
-//        System.out.println(tipo);
         switch(tipo) {
             case "literal":
                 return "%s";
@@ -58,6 +71,7 @@ public class GeradorDeCodigo extends LABaseListener {
         }
 
     }
+
 
     public void testaGerador(){
         String entrada = "/home/felipequecole/IdeaProjects/T1_CC2/casosDeTesteT1/";
@@ -77,11 +91,13 @@ public class GeradorDeCodigo extends LABaseListener {
         ParseTreeWalker.DEFAULT.walk(gc, tree);
     }
 
+
     private String getTipoEmC(String tipo_la){
         return tipo_la.replace("inteiro", "int").
                 replace("real", "float").
                 replace("literal", "char");
     }
+
 
     private String converteExpressaoParaC(String expr){
         if (!expr.contains("<=") && !expr.contains(">=")) {
@@ -91,6 +107,7 @@ public class GeradorDeCodigo extends LABaseListener {
             return expr.replace("<>", "!=");
         }
     }
+
 
     private String converteOperadoresLogicos(LAParser.ExpressaoContext expr) {
         try {
@@ -108,9 +125,11 @@ public class GeradorDeCodigo extends LABaseListener {
         }
     }
 
+
     private boolean temDimensao(){
         return !(this.dimensao.equals("[") || this.dimensao.equals("[]"));
     }
+
 
     @Override
     public void enterPrograma(LAParser.ProgramaContext ctx) {
@@ -202,10 +221,13 @@ public class GeradorDeCodigo extends LABaseListener {
                 print(" " + ctx.IDENT().getText() + " = ");
                 println(ctx.valor_constante().getText() + ";");
                 break;
-            case "declare":
-                identar();
-                print(getTipoEmC(ctx.variavel().tipo().getText().replace("^", "")) + " ");
-//
+//            case "declare":
+//                identar();
+//                if (ctx.variavel().tipo().registro() == null) {
+////                    print(getTipoEmC(ctx.variavel().tipo().getText().replace("^", "")) + " ");
+//                    this.declarouRegistro = true;
+//                }
+                //
 //
 //                if (ctx.variavel().tipo().getText().contains("^") && false){
 //                    print(getTipoEmC(ctx.variavel().tipo().getText()).replace("^", "") );
@@ -218,18 +240,34 @@ public class GeradorDeCodigo extends LABaseListener {
     }
 
 
+
     @Override
     public void enterVariavel(LAParser.VariavelContext ctx) {
-        pilhaDeTabelas.topo().adicionarSimbolo(ctx.IDENT().getText(), ctx.tipo().getText());
+        String id = ctx.IDENT().getText();
+        String tipo = ctx.tipo().getText();
+        System.out.println("id: " + id + " tipo: " + tipo);
+        if (declarouRegistro){
+
+        }
+        if (ctx.tipo().registro() == null) {
+            pilhaDeTabelas.topo().adicionarSimbolo(id, tipo);
+            identar();
+            print(getTipoEmC(ctx.tipo().getText().replace("^", "")) + " ");
+        } else {
+            pilhaDeTabelas.topo().adicionarSimbolo(id, "registro");
+        }
         for (LAParser.Mais_varContext mais_var : ctx.lista_mais_var) {
             pilhaDeTabelas.topo().adicionarSimbolo(mais_var.IDENT().getText(), ctx.tipo().getText());
         }
+
     }
 
     @Override
     public void exitVariavel(LAParser.VariavelContext ctx) {
 //        System.out.println("Saiu variavel");
-        print(ctx.IDENT().getText());
+        if (!ctx.IDENT().getText().contains(".")) {
+            print(ctx.IDENT().getText());
+        }
         if (ctx.tipo().getText().equals("literal")){
             // Não existe "String" em C, apenas vetor de caracteres
             // Optamos por adotar tamanho padrão 100
@@ -294,11 +332,13 @@ public class GeradorDeCodigo extends LABaseListener {
         } else if (token.equals("escreva")) {
             boolean mais = false;
             boolean tratado = false;
+            this.imprimindo = true;
             identar();
             print("printf(");
             String id = ctx.expressao().getText();
             String tipo_id = id;
-            System.out.println(id);
+            System.out.println("id: " + id);
+            System.out.println("tipo: " + getTipo(tipo_id));
             if(id.contains("[")){
                 String[] split = id.split("\\[");
                 String[] split_2 = split[1].split("]");
@@ -307,9 +347,12 @@ public class GeradorDeCodigo extends LABaseListener {
                 } catch (IndexOutOfBoundsException e) {
                     tipo_id = split[0];
                 }
-            } else if (id.contains("(")) {
+            } else if (id.contains("(")) { // caso de funcao
                 String[] split = id.split("\\(");
                 tipo_id = split[0];
+            } else if (id.contains(".")) { // caso de registro
+                String[] split = id.split("\\.");
+                tipo_id = split[split.length-1];
             }
             System.out.println(tipo_id);
             String tipo = pilhaDeTabelas.topo().getTipo(tipo_id);
@@ -401,8 +444,24 @@ public class GeradorDeCodigo extends LABaseListener {
                         print("\\n\", " + id);
                         println(");");
                     } else {
-                        print(buffer.replace("\"", "").replace("$$", "") + "\", " + id);
+                        String[] split = buffer.replace("$$", "-").split("-");
+                        print("\", " + id);
                         println(");");
+                        for (String part : split){
+                            System.out.println(part);
+                            identar();
+                            if (part.contains("\"")) {
+                                println("printf("+part+");");
+                            } else {
+                                if (part.contains(".")){
+                                    String[] split_2 = part.split("\\.");
+                                    id = split_2[split_2.length-1];
+                                } else {
+                                    id = part;
+                                }
+                                println("printf(\"" + getTagC(getTipo(id)) + "\"," + part + ");");
+                            }
+                        }
                     }
                 }
 
@@ -456,7 +515,11 @@ public class GeradorDeCodigo extends LABaseListener {
             if (ctx.ponteiros_opcionais() != null && ctx.ponteiros_opcionais().ponteiros_opcionais() != null) {
                 print("*");
             }
-            print(ctx.IDENT().getText());
+            if (ctx.chamada_atribuicao().expressao().getText().contains("\"")) {
+                print("strcpy(" + ctx.IDENT().getText());
+            } else {
+                print(ctx.IDENT().getText());
+            }
 
 //            if (ctx.chamada_atribuicao().expressao() != null) {
 //                println(ctx.IDENT().getText() + " = " + ctx.chamada_atribuicao().expressao().getText() + ";");
@@ -476,18 +539,45 @@ public class GeradorDeCodigo extends LABaseListener {
     @Override
     public void enterChamada_atribuicao(LAParser.Chamada_atribuicaoContext ctx) {
         this.atribuicao = true;
+
+    }
+
+    @Override
+    public void enterOutros_ident(LAParser.Outros_identContext ctx) {
+        if (ctx.getText().contains(".") && !this.imprimindo){
+            print(ctx.getText());
+        }
+    }
+
+    @Override
+    public void exitChamada_atribuicao(LAParser.Chamada_atribuicaoContext ctx) {
         if(ctx.dimensao()!= null) {
             print(ctx.dimensao().getText());
         }
         if(ctx.expressao() != null) {
-            println(" = " + ctx.expressao().getText() + ";");
+            if (ctx.expressao().getText().contains("\"")){
+                println("," + ctx.expressao().getText() + ");");
+            } else {
+                println(" = " + ctx.expressao().getText() + ";");
+            }
+
         }
+        this.atribuicao = false;
     }
 
+    @Override
+    public void enterRegistro(LAParser.RegistroContext ctx) {
+        identar();
+        println("struct {");
+        this.ci++;
+    }
 
     @Override
-    public void exitChamada_atribuicao(LAParser.Chamada_atribuicaoContext ctx) {
-        this.atribuicao = false;
+    public void exitRegistro(LAParser.RegistroContext ctx) {
+        this.ci--;
+        identar();
+        print("}");
+        this.declarouRegistro = false;
     }
 
     @Override
@@ -534,6 +624,10 @@ public class GeradorDeCodigo extends LABaseListener {
                 String exp = converteOperadoresLogicos(ctx.expressao());
                 exp = converteExpressaoParaC(exp);
                 println("}while (" + exp + ");");
+                break;
+            case "escreva":
+                this.imprimindo = false;
+                break;
         }
         if (switchCase) {
             identar();
