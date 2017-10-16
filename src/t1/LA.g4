@@ -61,13 +61,13 @@ cmd : 'leia' '(' identificador [reg] mais_ident ')'
  | 'se' expressao [escreva] 'entao' comandos senao_opcional 'fim_se'
  | 'caso' exp_aritmetica 'seja' selecao senao_opcional 'fim_caso'
  | 'para' IDENT '<-' exp_aritmetica 'ate' exp_aritmetica 'faca' comandos 'fim_para'
- | 'enquanto' expressao 'faca' comandos 'fim_enquanto'
- | 'faca' comandos 'ate' expressao
- | '^' IDENT outros_ident dimensao '<-' expressao
+ | 'enquanto' expressao [escreva] 'faca' comandos 'fim_enquanto'
+ | 'faca' comandos 'ate' expressao [escreva]
+ | '^' IDENT outros_ident dimensao '<-' expressao [escreva]
  | IDENT chamada_atribuicao
  | 'retorne' expReturn = expressao [escreva] ;
 //mais_expressao : ',' expressao mais_expressao | ;
-mais_expressao : (',' lista_expressao += expressao)*;
+mais_expressao [boolean escreva] : (',' lista_expressao += expressao [escreva])*;
 senao_opcional : 'senao' comandos | ;
 // Fim
 
