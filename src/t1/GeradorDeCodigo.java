@@ -6,46 +6,65 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
 
 /**
  * Created by felipequecole on 06/10/17.
  */
 public class GeradorDeCodigo extends LABaseListener {
-    // String que contem a saida (codigo em C)
+    // String que contém a saída (codigo em C)
     private String saida;
-    // Buffer que contem a dimensao (em casos que existe)
+    // Buffer que contém a dimensão (em casos que existe)
     private String dimensao = "";
     // Buffer de uso geral para comunicação entre listeners
     private String buffer = "";
+
     // flags
+    // True quando está ocorrendo declaração de um "Caso"
     private boolean switchCase = false;
+    // True quando o "Caso" possui um switch
+    //      (utilizado para diferenciar "default" de "else"
     private boolean switchDefault = false;
+    // Demarca quando está ocorrendo atribuição
+    // (útil para registro)
     private boolean atribuicao = false;
+    // demarca quando o que está sendo declarado é um registro
+    // (útil para tratar variáveis internas do registro)
     private boolean declarouRegistro = false;
+    // demarca quando está ocorrendo um print
+    // (útil para tratar caso de registro, e acesso a atributos dele)
     private boolean imprimindo = false;
     // fim das flags
 
-    private int ci = 0; //contador de identacao
+    // contador de identação (apenas para deixar o codigo mais limpo)
+    private int ci = 0;
+    // utilizada para verificao de tipo em operações de read ou print
     private PilhaDeTabelas pilhaDeTabelas = new PilhaDeTabelas();
+    // utilizada para verificacao de tipo de retorno de funcoes
     private TabelaDeSimbolos funcoes = new TabelaDeSimbolos("funcoes");
 
+    // obs: a geração de código não verifica novamente coerção de tipo e etc
+    // esses casos são cobertos no analisador semântico.
 
+
+    // apenas inicializa a string de saída
     public GeradorDeCodigo(){
         saida = "";
     }
 
 
+    // insere o texto na mesma linha
     private void print(String texto){
         this.saida += texto;
     }
 
 
+    // insere o texto na mesma linha e quebra a linha
     private void println(String texto){
         this.saida += texto + "\n";
     }
 
 
+    // insere a quantidade corretas de tabulações (apenas fins estéticos)
     private void identar() {
         for(int i = 0; i < ci; i++){
             this.saida += "\t";
@@ -53,11 +72,14 @@ public class GeradorDeCodigo extends LABaseListener {
     }
 
 
+    // retorna a string do tipo (ainda na sintaxe de LA) dado o nome do identificador
     private String getTipo(String id) {
         return pilhaDeTabelas.topo().getTipo(id);
     }
 
 
+    // retorna o especificador adequado para operações de leitura e escrita em C
+    // dado o tipo em LA
     private String getTagC(String tipo) {
         switch(tipo) {
             case "literal":
@@ -73,6 +95,7 @@ public class GeradorDeCodigo extends LABaseListener {
     }
 
 
+    // apenas para fins de teste
     public void testaGerador(){
         String entrada = "/home/felipequecole/IdeaProjects/T1_CC2/casosDeTesteT1/";
         entrada+= "3.arquivos_sem_erros/ENTRADA/17.alg";
@@ -86,12 +109,13 @@ public class GeradorDeCodigo extends LABaseListener {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         LAParser parser = new LAParser(tokens);
         LAParser.ProgramaContext tree = parser.programa();
-        AnalisadorSemantico as = new AnalisadorSemantico();
         GeradorDeCodigo gc = new GeradorDeCodigo();
         ParseTreeWalker.DEFAULT.walk(gc, tree);
+        System.out.println(gc.toString());
     }
 
 
+    // dado o tipo em LA, retorna o tipo correspondente em C
     private String getTipoEmC(String tipo_la){
         return tipo_la.replace("inteiro", "int").
                 replace("real", "float").
@@ -99,6 +123,7 @@ public class GeradorDeCodigo extends LABaseListener {
     }
 
 
+    // faz alteração para operadores compatíveis com C
     private String converteExpressaoParaC(String expr){
         if (!expr.contains("<=") && !expr.contains(">=")) {
             return expr.replace("=", "==").
@@ -109,6 +134,7 @@ public class GeradorDeCodigo extends LABaseListener {
     }
 
 
+    // converte os operadores lógicos de LA para os compatíveis com C
     private String converteOperadoresLogicos(LAParser.ExpressaoContext expr) {
         try {
             String operacao = expr.getText();
@@ -125,7 +151,11 @@ public class GeradorDeCodigo extends LABaseListener {
         }
     }
 
-
+    /*
+     Como a regra dimensão é chamada sempre (podendo gerar vazio)
+        foi necessário fazer essa função para verificar quando realmente
+        a dimensão é declarada
+    */
     private boolean temDimensao(){
         return !(this.dimensao.equals("[") || this.dimensao.equals("[]"));
     }
@@ -133,34 +163,32 @@ public class GeradorDeCodigo extends LABaseListener {
 
     @Override
     public void enterPrograma(LAParser.ProgramaContext ctx) {
+        // declara as bibliotecas padrões
         println("#include<stdio.h>\n#include<stdlib.h>");
+        // inicializa o novo escopo
         pilhaDeTabelas.empilhar(new TabelaDeSimbolos("main"));
-        System.out.println("Entrou no programa");
     }
 
 
+    // regra que inicia a função principal do programa
     @Override
     public void enterCorpo(LAParser.CorpoContext ctx) {
-//        System.out.println("Entrou no corpo");
         println("");
         println("int main() {");
-        ci++;
+        this.ci++;
     }
 
 
+    // regra que finaliza a função principal do programa
     @Override
     public void exitCorpo(LAParser.CorpoContext ctx) {
-//        System.out.println("saiu do corpo");
         identar();
         println("return 0;");
         print("}");
     }
 
-    @Override
-    public void enterDecl_local_global(LAParser.Decl_local_globalContext ctx) {
-//        super.enterDecl_local_global(ctx);
-    }
 
+    // regra que começa a declaração de funções e procedimentos
     @Override
     public void enterDeclaracao_global(LAParser.Declaracao_globalContext ctx) {
         pilhaDeTabelas.empilhar(new TabelaDeSimbolos("global"));
@@ -177,28 +205,34 @@ public class GeradorDeCodigo extends LABaseListener {
                 String tipo_retorno = ctx.tipo_estendido().getText();
                 print(getTipoEmC(tipo_retorno) + " " + nome_procfunc + " ");
                 funcoes.adicionarSimbolo(nome_procfunc, tipo_retorno);
-                System.out.println(ctx.getText());
-
                 break;
         }
     }
 
+
+    // finaliza a declaração de funções e procedimentos
     @Override
     public void exitDeclaracao_global(LAParser.Declaracao_globalContext ctx) {
         println("}");
     }
 
+
+    // regra que inicia a declaração de parâmetros de funções e procedimentos
     @Override
     public void enterParametros_opcional(LAParser.Parametros_opcionalContext ctx) {
         print("(");
     }
 
+
+    // finaliza a declaração de parâmetros de uma função ou procedimento
     @Override
     public void exitParametros_opcional(LAParser.Parametros_opcionalContext ctx) {
         println(") {");
         this.ci++;
     }
 
+
+    // trata a lista de parametros e converte para o tipo correspondente em C
     @Override
     public void enterParametro(LAParser.ParametroContext ctx) {
         String id = ctx.identificador().IDENT().getText();
@@ -207,10 +241,15 @@ public class GeradorDeCodigo extends LABaseListener {
         if(!tipo.equals("literal")) {
             print(getTipoEmC(tipo) + " " + id);
         } else {
+            // como em C não existe String, apenas vetor de caracteres
+            // declara-se um vetor de 100 posições (arbitrário)
             print(getTipoEmC(tipo) + " " + id + "[100]");
         }
     }
 
+
+    // trata casos especiais de declarações locais (constante e tipo)
+    // as demais são tratadas na regra de variáveis.
     @Override
     public void enterDeclaracao_local(LAParser.Declaracao_localContext ctx) {
         String token = ctx.getStart().getText();
@@ -224,25 +263,12 @@ public class GeradorDeCodigo extends LABaseListener {
             case "tipo":
                 identar();
                 print("typedef");
-//            case "declare":
-//                identar();
-//                if (ctx.variavel().tipo().registro() == null) {
-////                    print(getTipoEmC(ctx.variavel().tipo().getText().replace("^", "")) + " ");
-//                    this.declarouRegistro = true;
-//                }
-                //
-//
-//                if (ctx.variavel().tipo().getText().contains("^") && false){
-//                    print(getTipoEmC(ctx.variavel().tipo().getText()).replace("^", "") );
-//                } else {
-//                    print(getTipoEmC(ctx.variavel().tipo().getText().replace("^", "")) + " ");
-//
-//                }
-                // o resto é feito no listener da variavel
         }
     }
 
 
+    // regra que finaliza as declarações locais especiais
+    // criada especialmente para o caso de um tipo novo (é ali que seu nome é colocado)
     @Override
     public void exitDeclaracao_local(LAParser.Declaracao_localContext ctx) {
         String token = ctx.getStart().getText();
@@ -252,31 +278,40 @@ public class GeradorDeCodigo extends LABaseListener {
         }
     }
 
+
+    // trata os casos de variável (incluindo registro) em geral
     @Override
     public void enterVariavel(LAParser.VariavelContext ctx) {
         String id = ctx.IDENT().getText();
         String tipo = ctx.tipo().getText();
-        System.out.println("id: " + id + " tipo: " + tipo);
-        if (declarouRegistro){
-
-        }
         if (ctx.tipo().registro() == null) {
+            // caso não seja registro, insiro na tabela de simbolos
+            // e gero o codigo em C correspondente
             pilhaDeTabelas.topo().adicionarSimbolo(id, tipo);
             identar();
+            // tiro o operador de ponteiro pois isso será tratado em outra regra
             print(getTipoEmC(ctx.tipo().getText().replace("^", "")) + " ");
         } else {
+            // no caso de registro, eu só insiro na tabela
+            // o código em C para isso é gerado em outra regra
             pilhaDeTabelas.topo().adicionarSimbolo(id, "registro");
         }
         for (LAParser.Mais_varContext mais_var : ctx.lista_mais_var) {
+            // se tiver mais de um identificador de mesmo tipo
+            // varro todos, inserido-os na TS.
             pilhaDeTabelas.topo().adicionarSimbolo(mais_var.IDENT().getText(), ctx.tipo().getText());
         }
 
     }
 
+
+    // ao sair da regra variavel, essa função é chamada
+    // ela gera o nome das variaveis, já que a ordem em C é tipo identificador
+    // e em LA é identificador : tipo
     @Override
     public void exitVariavel(LAParser.VariavelContext ctx) {
-//        System.out.println("Saiu variavel");
         if (!ctx.IDENT().getText().contains(".")) {
+            // caso seja um atributo de uma struct é tratado em outra regra
             print(ctx.IDENT().getText());
         }
         if (ctx.tipo().getText().equals("literal")){
@@ -285,72 +320,86 @@ public class GeradorDeCodigo extends LABaseListener {
             print("[100]");
         }
         if(ctx.dimensao() != null && temDimensao()) {
+            // caso seja um vetor, é aqui que é gerado o "[tamanho]"
             print(dimensao);
         }
+        // esse for trata o caso de uma lista de variaveis
+        // exemplo: tipo ident1, ident2...
         for (LAParser.Mais_varContext mais_var : ctx.lista_mais_var) {
             print("," + mais_var.IDENT().getText());
             if(ctx.tipo().getText().equals("literal")){
                 print("[100]");
             }
             if (mais_var.dimensao() != null && temDimensao()){
-                //todo pode causar problemas.
                 print(dimensao);
             }
         }
         println(";");
     }
 
+
+    // regra que começa a inserir informações sobre a dimensao no buffer adequado
     @Override
     public void enterDimensao(LAParser.DimensaoContext ctx) {
-//        System.out.println("entrou dimensao");
         dimensao = "";
         dimensao = "[";
     }
 
+
+    // termina a criação do buffer de dimensão
     @Override
     public void exitDimensao(LAParser.DimensaoContext ctx) {
-//        System.out.println("saiu dimensao");
-        System.out.println(ctx.dimensao() != null);
         if(ctx.exp_aritmetica() != null) {
             dimensao += ctx.exp_aritmetica().getText();
             dimensao += "]";
         }
     }
 
-    @Override
-    public void enterExp_aritmetica(LAParser.Exp_aritmeticaContext ctx) {
-//        System.out.println("entrou exp aritmetica");
-//        print(ctx.getText());
-    }
 
+    /*
+    Regra mais complexa: nela são tratados diversos comandos existentes
+    em LA e seu mapeamento para C
+     */
     @Override
     public void enterCmd(LAParser.CmdContext ctx) {
+        // foi utilizado o token inicial para identificar qual
+        // comando específico estava sendo chamado
         String token = ctx.getStart().getText();
-        System.out.println("token: " + token);
+
+        // caso o comando seja de leitura do teclado
         if (token.equals("leia")) {
+            // identificamos a variavel a ser lida
             String id = ctx.identificador().IDENT().getText();
+            // e o tipo da mesma
             String tipo = pilhaDeTabelas.topo().getTipo(id);
+            // caso seja string, utilizamos gets()
             if (tipo.equals("literal")) {
                 identar();
                 println("gets(" + id + ");");
-            } else {
+            }
+            // caso contrário, é utilizado o scanf
+            else {
                 identar();
                 print("scanf(");
+                // utilizando o especificador correto
                 print(tipo.equals("inteiro") ? "\"%d\"" : "\"%f\"");
+                // e inserindo o operador &
                 print(", &" + ctx.identificador().IDENT().getText());
                 println(");");
             }
         } else if (token.equals("escreva")) {
-            boolean mais = false;
+            // algumas flags locais que auxiliaram no tratamento de casos
+            boolean mais =  !ctx.mais_expressao().lista_expressao.isEmpty();
             boolean tratado = false;
+            // flag global é ativa
             this.imprimindo = true;
             identar();
             print("printf(");
             String id = ctx.expressao().getText();
+            // tipo_id é utilizada para pegar o tipo adequado na tabela de simbolos
             String tipo_id = id;
-            System.out.println("id: " + id);
-            System.out.println("tipo: " + getTipo(tipo_id));
-            if(id.contains("[")){
+            // ele é importante em casos de vetor, registro ou função
+            if(id.contains("[")){ // caso de vetor
                 String[] split = id.split("\\[");
                 String[] split_2 = split[1].split("]");
                 try {
@@ -365,48 +414,43 @@ public class GeradorDeCodigo extends LABaseListener {
                 String[] split = id.split("\\.");
                 tipo_id = split[split.length-1];
             }
-            System.out.println(tipo_id);
             String tipo = pilhaDeTabelas.topo().getTipo(tipo_id);
-            if (tipo.equals("null")) {
+            if (tipo.equals("null")) { // caso o tipo não seja encontrado na TS
+                // ele verifica se é uma função e qual o tipo de retorno
                 tipo = funcoes.getTipo(tipo_id);
             }
+            // converte para o especificador correto em C
             switch (tipo) {
                 case "literal":
                     print("\"" + getTagC(tipo));
-                    if (!ctx.mais_expressao().lista_expressao.isEmpty()) {
-                        mais = true;
-                    }
                     break;
                 case "inteiro":
                     print("\"" + getTagC(tipo));
-                    if (!ctx.mais_expressao().lista_expressao.isEmpty()) {
-                        mais = true;
-                    }
                     break;
                 case "real":
                     print("\"" + getTagC(tipo));
-                    if (!ctx.mais_expressao().lista_expressao.isEmpty()) {
-                        mais = true;
-                    }
                     break;
                 default:
-                    if (id.contains("\"")) { //literal + variavel ou só literal
+                    if (id.contains("\"")) { //literal constante + variavel ou só literal
                         mais = true;
                         tratado = true;
                         if (ctx.mais_expressao() != null) {
                             buffer = "";
                         }
                         id = id.replace("\"", ""); //tira as aspas
+                        // chama função responsável por construir o buffer
                         enterMais_expressao(ctx.mais_expressao());
                         for (String mais_id : buffer.split("$$")) {
                             mais_id = mais_id.replace("$$", "");
-//                            System.out.println("mais id: " + mais_id);
                             if (!getTagC(getTipo(mais_id)).equals("null")) {
                                 id += getTagC(getTipo(mais_id));
                             }
                         }
+                        // reinsere as aspas
                         id = "\"" + id + "\"";
                         print(id);
+                        // se tiver mais que uma expressão, separo por virgulas
+                        // se tiver apenas uma, removo o separador
                         buffer = buffer.split("$$").length > 1 ? buffer.replace("$$", ",") :
                                 buffer.replace("$$", "");
                         if (!buffer.equals("")) {
@@ -414,6 +458,7 @@ public class GeradorDeCodigo extends LABaseListener {
                         } else {
                             println(");");
                         }
+                    // se for uma expressao aritmetica
                     } else if (id.contains("+") || id.contains("-")) {
                         mais = true;
                         tratado = true;
@@ -445,21 +490,18 @@ public class GeradorDeCodigo extends LABaseListener {
 
             }
             if (mais) {
-                // todo esvaziar o buffer, pegar tudo que veio depois
-                // todo fazer com que eu só feche o printf aqui
                 this.buffer = "";
                 enterMais_expressao(ctx.mais_expressao());
                 if (!tratado) {
-                    System.out.println(buffer);
                     if(buffer.equals("")) {
                         print("\\n\", " + id);
                         println(");");
                     } else {
+                        // outros casos, divido em mais de um printf
                         String[] split = buffer.replace("$$", "-").split("-");
                         print("\", " + id);
                         println(");");
                         for (String part : split){
-                            System.out.println(part);
                             identar();
                             if (part.contains("\"")) {
                                 println("printf("+part+");");
@@ -476,21 +518,25 @@ public class GeradorDeCodigo extends LABaseListener {
                     }
                 }
 
-            } else {
+            } else { // caso não tenha nenhuma outra expressão
                 print("\", " + id);
                 println(");");
             }
+        // comando if
         } else if (token.equals("se")) {
             identar();
+            // necessario converter os operadores
             String expressao = converteOperadoresLogicos(ctx.expressao());
             println("if (" + converteExpressaoParaC(expressao) + "){");
             this.ci++;
+        // comando "caso"
         } else if (token.equals("caso")) {
             identar();
             println("switch(" + ctx.exp_aritmetica(0).getText() + ") {");
             this.ci++;
             this.ci++;
             if (ctx.senao_opcional().comandos() != null) {
+                // necessario para criar um "default" ao inves de "else"
                 this.switchDefault = true;
             }
         } else if (token.equals("para")) {
@@ -508,13 +554,16 @@ public class GeradorDeCodigo extends LABaseListener {
             identar();
             println("do {");
             ci++;
-        } else if (ctx.getText().contains("<-")) { //atribuicao
+        } else if (ctx.getText().contains("<-")) { // comando de atribuicao
             identar();
+            // set flag de atribuicao
             this.atribuicao = true;
             if (ctx.ponteiros_opcionais() != null && ctx.ponteiros_opcionais().ponteiros_opcionais() != null) {
+                // caso seja ponteiro
                 print("*");
             }
             if (ctx.chamada_atribuicao().expressao().getText().contains("\"")) {
+                // caso seja um literal, é necessário utilizar strcpy()
                 print("strcpy(" + ctx.IDENT().getText());
             } else {
                 print(ctx.IDENT().getText());
@@ -523,69 +572,17 @@ public class GeradorDeCodigo extends LABaseListener {
         } else if (token.equals("retorne")) {
             identar();
             println("return " + ctx.expressao().getText() + ";");
-        } else { //chamada de funcao ou procedimento
+        } else { // chamada de funcao ou procedimento
             identar();
             println(ctx.getText() + ";");
         }
     }
 
 
-    @Override
-    public void enterChamada_atribuicao(LAParser.Chamada_atribuicaoContext ctx) {
-        this.atribuicao = true;
-
-    }
-
-    @Override
-    public void enterOutros_ident(LAParser.Outros_identContext ctx) {
-        if (ctx.getText().contains(".") && !this.imprimindo){
-            print(ctx.getText());
-        }
-    }
-
-    @Override
-    public void exitChamada_atribuicao(LAParser.Chamada_atribuicaoContext ctx) {
-        if(ctx.dimensao()!= null) {
-            print(ctx.dimensao().getText());
-        }
-        if(ctx.expressao() != null) {
-            if (ctx.expressao().getText().contains("\"")){
-                println("," + ctx.expressao().getText() + ");");
-            } else {
-                println(" = " + ctx.expressao().getText() + ";");
-            }
-
-        }
-        this.atribuicao = false;
-    }
-
-    @Override
-    public void enterRegistro(LAParser.RegistroContext ctx) {
-        identar();
-        println("struct {");
-        this.ci++;
-    }
-
-    @Override
-    public void exitRegistro(LAParser.RegistroContext ctx) {
-        this.ci--;
-        identar();
-        print("}");
-        this.declarouRegistro = false;
-    }
-
-    @Override
-    public void enterPonteiros_opcionais(LAParser.Ponteiros_opcionaisContext ctx) {
-        System.out.println(ctx.getText());
-        if (ctx.ponteiros_opcionais() != null && !atribuicao) {
-            print("*");
-        }
-    }
-
+    // faz a geração necessária após o tratamento interno dos comandos da regra cmd
     @Override
     public void exitCmd(LAParser.CmdContext ctx) {
         String token = ctx.getStart().getText();
-        System.out.println("saida: " + token);
         switch (token) {
             case "se":
                 this.ci--;
@@ -593,10 +590,7 @@ public class GeradorDeCodigo extends LABaseListener {
                 println("}");
                 break;
             case "caso":
-                if (ctx.senao_opcional() != null) { // se tem valor default
-                    System.out.println("Tem default");
-                } else {
-                    System.out.println("Nao tem default");
+                if (ctx.senao_opcional() == null) {
                     this.ci--;
                     identar();
                     println("}");
@@ -632,13 +626,71 @@ public class GeradorDeCodigo extends LABaseListener {
     }
 
 
-
+    @Override
+    public void enterChamada_atribuicao(LAParser.Chamada_atribuicaoContext ctx) {
+        // set flag de atribuicao
+        this.atribuicao = true;
+    }
 
 
     @Override
+    public void exitChamada_atribuicao(LAParser.Chamada_atribuicaoContext ctx) {
+        if(ctx.dimensao() != null) {
+            print(ctx.dimensao().getText());
+        }
+        if(ctx.expressao() != null) {
+            if (ctx.expressao().getText().contains("\"")){ // caso seja um literal
+                println("," + ctx.expressao().getText() + ");");
+            } else {
+                println(" = " + ctx.expressao().getText() + ";");
+            }
+
+        }
+        this.atribuicao = false;
+    }
+
+
+    // cobre o caso de chamada de atributos de um registro
+    @Override
+    public void enterOutros_ident(LAParser.Outros_identContext ctx) {
+        // caso seja impressão, não é necessário fazer isso
+        // pois é tratado de outra maneira
+        if (ctx.getText().contains(".") && !this.imprimindo){
+            print(ctx.getText());
+        }
+    }
+
+
+    @Override
+    public void enterRegistro(LAParser.RegistroContext ctx) {
+        // set flag de declaração de registro
+        this.declarouRegistro = true;
+        identar();
+        println("struct {");
+        this.ci++;
+    }
+
+
+    @Override
+    public void exitRegistro(LAParser.RegistroContext ctx) {
+        this.ci--;
+        identar();
+        print("}");
+        this.declarouRegistro = false;
+    }
+
+
+    @Override
+    public void enterPonteiros_opcionais(LAParser.Ponteiros_opcionaisContext ctx) {
+        if (ctx.ponteiros_opcionais() != null && !atribuicao) {
+            print("*");
+        }
+    }
+
+
+    // gera else em caso de if, e default em caso de switch case
+    @Override
     public void enterSenao_opcional(LAParser.Senao_opcionalContext ctx) {
-        //todo o switch case usa isso para default tem que tratar
-        System.out.println("switch: " + switchCase);
         if (switchDefault){
             ci--;
             identar();
@@ -653,6 +705,8 @@ public class GeradorDeCodigo extends LABaseListener {
         }
     }
 
+
+    // em caso de switch, necessario corrigir o recuo da identação
     @Override
     public void exitSenao_opcional(LAParser.Senao_opcionalContext ctx) {
         if (switchDefault) {
@@ -663,15 +717,17 @@ public class GeradorDeCodigo extends LABaseListener {
         }
     }
 
+
+    // regra para os casos do switch case
     @Override
     public void enterSelecao(LAParser.SelecaoContext ctx) {
         ci--;
         String selecao = ctx.constantes().getText();
-        System.out.println("selecao: " + selecao);
         if (selecao.contains("..")){
+            // trata o caso de intervalos (não existe em C)
+            // gerando um case para cada numero no intervalo
             selecao = selecao.replace("..", " ");
             String[] split = selecao.split(" ");
-            System.out.println(split[0]);
             int inicio = Integer.parseInt(split[0].trim());
             int fim = Integer.parseInt(split[1].trim());
             for(int i = inicio; i <= fim; i++) {
@@ -685,20 +741,21 @@ public class GeradorDeCodigo extends LABaseListener {
             ci++;
         }
         switchCase = true;
-
     }
 
 
+    // varre preenchendo o buffer para mais expressoes (utilizado em "escreva", por exemplo)
     @Override
     public void enterMais_expressao(LAParser.Mais_expressaoContext ctx) {
         buffer="";
         for (LAParser.ExpressaoContext expr : ctx.lista_expressao){
-//            System.out.println(expr.getText());
             enterExpressao(expr);
         }
     }
 
 
+    // varre cada expressa do "mais expressao" preenchendo o buffer
+    // o separador "$$" foi escolhido arbitrariamente
     @Override
     public void enterExpressao(LAParser.ExpressaoContext ctx) {
         String exp = ctx.getText();
@@ -710,7 +767,6 @@ public class GeradorDeCodigo extends LABaseListener {
         }
         if (split != null) {
             for (String part : split) {
-//                System.out.println("part_exp: " + part);
                 buffer+= part.replace("+", "").replace("-", "") + "$$";
             }
         } else {
@@ -718,17 +774,6 @@ public class GeradorDeCodigo extends LABaseListener {
         }
     }
 
-    @Override
-    public void exitExpressao(LAParser.ExpressaoContext ctx) {
-//        print(ctx.getText());
-//        System.out.println(buffer);
-    }
-
-    @Override
-    public void exitPrograma(LAParser.ProgramaContext ctx) {
-//        System.out.println("Saiu do programa");
-        System.out.println(saida);
-    }
 
     @Override
     public String toString() {
