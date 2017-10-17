@@ -50,7 +50,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
         }
       }
     }
-    //visitChildren(ctx);
+    visitChildren(ctx);
     return null;
   }
 
@@ -103,6 +103,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitChamada_partes(LAParser.Chamada_partesContext ctx) {
     //Lista auxiliar que contem todos os parametros passados para a função na hora de sua chamada
+    System.out.println("TIPOSSSSS :"+(String)tipo_expressao(ctx.expressao()));
     ArrayList<String> aux = new ArrayList<String>();
     //Adicionando os parametros a lista
     if(ctx != null){
