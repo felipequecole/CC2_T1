@@ -637,7 +637,6 @@ public class AnalisadorSemantico extends LABaseVisitor{
 
     if (ctx != null) {
       if (ctx.tipo_estendido() != null) {
-        //  ctx.reg = "";
         return visitTipo_estendido(ctx.tipo_estendido());
       } else if (ctx.registro() != null) {
         return visitRegistro(ctx.registro());

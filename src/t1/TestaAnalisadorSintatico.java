@@ -18,15 +18,23 @@ public class TestaAnalisadorSintatico {
 
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         LAParser parser = new LAParser(tokens);
+        //remove todos os listeners de erro
         parser.removeErrorListeners();
+        // adiciona o ErroListener Customizado
         parser.addErrorListener(new T1ErrorListener(out));
+        //executa análise sintática
         LAParser.ProgramaContext arvore=parser.programa();
 
-        if (!out.isModificado()) {
+        if (!out.isModificado()) {//se foi bem sucedida
+            //cria objeta analisador semantico
             AnalisadorSemantico as=new AnalisadorSemantico();
+            //torna o tokenstream acessivel ao Analisador Semantico
             as.setTokenStream(tokens);
+            //executa a análise sintatica
             as.visitPrograma(arvore);
-            if (!out.isModificado()) {
+
+            if (!out.isModificado()) {//se a análise foi bem sucedida
+                //Executa gerador de código
                 GeradorDeCodigo gc = new GeradorDeCodigo();
                 ParseTreeWalker.DEFAULT.walk(gc, arvore);
                 try{
