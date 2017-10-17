@@ -142,6 +142,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
       int tipoToken=token.getType();
       String simbolo=token.getText();
       int incremento=0;
+
       if(tipoToken==LAParser.IDENT){
         while(true){
           if(cts.get(incremento+i+1).getText().equals(".")){
@@ -151,8 +152,13 @@ public class AnalisadorSemantico extends LABaseVisitor{
             break;
           }
         }
+        if(cts.get(incremento+i+1).getText().equals("[")){
+          while(!cts.get(incremento+i).getText().equals("]")){
+            incremento++;
+          }
+        }
         String aux=escopos.getTipoSimbolo(simbolo);
-        System.out.println("visittipo  "+simbolo+" tipo "+aux);
+        System.out.println("linha: "+token.getLine()+" visittipo  "+simbolo+" tipo "+aux);
         if(aux==null)
           aux=escoposTipo.getTipoSimbolo(simbolo);
         if(aux==null)
