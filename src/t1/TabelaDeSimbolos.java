@@ -62,4 +62,8 @@ public class TabelaDeSimbolos {
         return escopo;
     }
 
+    public List<EntradaTabelaDeSimbolos> getSimbolos() {
+        return simbolos;
+    }
+
 }

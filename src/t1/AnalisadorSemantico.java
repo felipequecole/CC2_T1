@@ -18,6 +18,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
   /*ParametrosFuncProc é uma classe que comporta uma lista de parametros e um String
   que serve para identificar qual lista é de qual função ou procedimento*/
   ArrayList<ParametrosFuncProc> listaPFC= new ArrayList<ParametrosFuncProc>();
+  TabelaDeSimbolos tabelaRegistro = new TabelaDeSimbolos("registro");
 
 
   CommonTokenStream cts;
@@ -26,12 +27,26 @@ public class AnalisadorSemantico extends LABaseVisitor{
   }
 
   public Object visitExpressao(LAParser.ExpressaoContext ctx){
-    //  System.out.println((String) tipo_expressao(ctx));
+  //  System.out.println((String) tipo_expressao(ctx));
+    TabelaDeSimbolos atual = escopos.topo();
+    TabelaDeSimbolos atualTipo = escoposTipo.topo();
+
+
     for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
       Token token=cts.get(i);
       if(token.getType()==LAParser.IDENT){
+        String simbolo = token.getText();
+        String stop = ctx.getStop().getText();
+
+        if (ctx.escreva){
+          if (!simbolo.equals(stop) && ctx.getSourceInterval().b - ctx.getSourceInterval().a == 2 ) {
+            //System.out.println("simbolo: " + simbolo + " getText: " + stop);
+            simbolo += "." + stop;
+          }
+        }
+
         if((!escopos.existeSimbolo(token.getText()))&&(!escoposTipo.existeSimbolo(token.getText()))){
-          Saida.println("Linha "+ token.getLine()+": identificador " +token.getText()+ " nao declarado");
+          Saida.println("Linha "+ token.getLine()+": identificador " +simbolo+ " nao declarado");
         }
       }
     }
@@ -88,6 +103,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitChamada_partes(LAParser.Chamada_partesContext ctx) {
     //Lista auxiliar que contem todos os parametros passados para a função na hora de sua chamada
+    System.out.println("TIPOSSSSS :"+(String)tipo_expressao(ctx.expressao()));
     ArrayList<String> aux = new ArrayList<String>();
     //Adicionando os parametros a lista
     if(ctx != null){
@@ -124,11 +140,21 @@ public class AnalisadorSemantico extends LABaseVisitor{
     for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
       Token token=cts.get(i);
       int tipoToken=token.getType();
-
+      String simbolo=token.getText();
+      int incremento=0;
       if(tipoToken==LAParser.IDENT){
-        String aux=escopos.getTipoSimbolo(token.getText());
+        while(true){
+          if(cts.get(incremento+i+1).getText().equals(".")){
+            simbolo+="."+cts.get(incremento+i+2).getText();
+            incremento+=2;
+          }else{
+            break;
+          }
+        }
+        String aux=escopos.getTipoSimbolo(simbolo);
+        System.out.println("visittipo  "+simbolo+" tipo "+aux);
         if(aux==null)
-          aux=escoposTipo.getTipoSimbolo(token.getText());
+          aux=escoposTipo.getTipoSimbolo(simbolo);
         if(aux==null)
           return "";
         if(aux.equals("void"))
@@ -139,6 +165,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
           tipoToken=LAParser.NUM_INT;
         if(aux.equals("real"))
           return "real";
+        tipoExp=aux;
       }
       if(tipoToken==LAParser.CADEIA){
         if(tipoExp.equals(""))
@@ -151,6 +178,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
       }else if(tipoToken==LAParser.NUM_REAL){
         return "real";
       }
+      i+=incremento;
     }
     return tipoExp;
   }
@@ -268,6 +296,10 @@ public class AnalisadorSemantico extends LABaseVisitor{
           visitParametros_opcional(ctx.parametros_opcional());
         }
 
+        if(ctx.declaracoes_locais() != null){
+          visitDeclaracoes_locais(ctx.declaracoes_locais());
+        }
+
         //visitando os comandos
         if(ctx.comandos() != null){
           visitComandos(ctx.comandos());
@@ -282,11 +314,20 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitParametros_opcional(LAParser.Parametros_opcionalContext ctx) {
     TabelaDeSimbolos atual = escopos.topo();
+    TabelaDeSimbolos atualTipo = escoposTipo.topo();
     ArrayList<String> listaDeParametros = new ArrayList<String>();
     if(ctx != null){
       for(LAParser.ParametroContext ct: ctx.lista_parametro){
         //Obtendo todos os parametros na declaração de uma função ou procedimento
         listaDeParametros.addAll((ArrayList<String>) visitParametro(ct));
+        String parametroRegistro = ct.identificador().IDENT().getText();
+        if (atualTipo.getTipo(atual.getTipo(parametroRegistro)).equals("registro")){
+          for (EntradaTabelaDeSimbolos e : tabelaRegistro.getSimbolos()) {
+            //System.out.println("simbolo struct: "+simbolo+"."+e.getNome()+" tipo: "+e.getTipo());
+            atual.adicionarSimbolo(parametroRegistro + "." + e.getNome(), e.getTipo());
+          }
+
+        }
       }
     }
     return listaDeParametros;
@@ -335,11 +376,13 @@ public class AnalisadorSemantico extends LABaseVisitor{
     return listaDeParametros;
   }
 
+
   @Override
   public Object visitCmd(LAParser.CmdContext ctx) {
 
     if(ctx==null)
       return null;
+
     //Verificando se a variavel existe na atribuição, para e ^
     if(ctx.IDENT() != null){
       String simbolo = ctx.IDENT().getText();
@@ -355,12 +398,31 @@ public class AnalisadorSemantico extends LABaseVisitor{
       }
     }
     if(ctx.chamada_atribuicao()!=null){
+      String simbolo = ctx.IDENT().getText();
+      if (ctx.chamada_atribuicao().outros_ident() != null) {
+        simbolo += visitOutros_ident(ctx.chamada_atribuicao().outros_ident());
+      }
 
       String tipo=(String)tipo_expressao(ctx.chamada_atribuicao().expressao());
       int ncounter= ponteiro_counter(ctx.ponteiros_opcionais());
 
       String var=ctx.IDENT().getText();
+
+      if( ctx.chamada_atribuicao().outros_ident()!=null){
+        List<LAParser.IdentificadorContext> lista_outrosIdent=  ctx.chamada_atribuicao().outros_ident().lista_outrosIdent;
+        System.out.println("tamanho:  "+lista_outrosIdent.size());
+
+        for(LAParser.IdentificadorContext ic: lista_outrosIdent){
+          var+="."+ic.IDENT().getText();
+          System.out.println("visitasdfasdfasd cmd: "+var);
+
+        }
+        System.out.println("visit cmd: "+var);
+      }
+
+
       String tipoVar = escopos.getTipoSimbolo(var);
+      System.out.println("visit cmd: "+var+" tipo: "+tipoVar +" tipo exp:"+tipo);
 
       boolean atribInvalida =! tipo.equals(tipoVar);
 
@@ -409,7 +471,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitMais_ident(LAParser.Mais_identContext ctx) {
     for(LAParser.IdentificadorContext ct: ctx.lista_ident){
-      String simbolo = ct.IDENT().getText();
+      String simbolo = (String) visitIdentificador(ct); //ct.IDENT().getText();
 
       if((!escopos.existeSimbolo(simbolo))&&(!escoposTipo.existeSimbolo(simbolo))){
         Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" nao declarado");
@@ -443,8 +505,16 @@ public class AnalisadorSemantico extends LABaseVisitor{
       }
       visitValor_constante(ctx.valor_constante());
     } else {
+      /*
       String tipo = (String) visitTipo(ctx.tipo());
       String simbolo = ctx.IDENT().getText();
+*/     String tipo = "";
+      String simbolo = ctx.IDENT().getText();
+      if (ctx.tipo().tipo_estendido() != null) {
+        tipo = (String) visitTipo(ctx.tipo());
+      } else if (ctx.tipo().registro() != null) {
+        tipo = (String) visitRegistro(ctx.tipo().registro());
+      }
 
       //adicionando tipo na tabela de simbolo tipos
       if(!atual.existeSimbolo(simbolo)&&(!atualTipo.existeSimbolo(simbolo))){
@@ -456,27 +526,73 @@ public class AnalisadorSemantico extends LABaseVisitor{
     return null;
   }
 
-
   @Override
   public Object visitVariavel(LAParser.VariavelContext ctx) {
+
     String tipo = (String) visitTipo(ctx.tipo());
+
     TabelaDeSimbolos atualTipo = escoposTipo.topo();
     TabelaDeSimbolos atual = escopos.topo();
-    //adicionando a primeira variavel a tabela de simbolos
-    String simbolo = ctx.IDENT().getText();
-    if(!atual.existeSimbolo(simbolo)&&(!atualTipo.existeSimbolo(simbolo))){
-      atual.adicionarSimbolo(simbolo, tipo);
-    } else {
-      Saida.println("Linha "+ctx.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
-    }
-    //adicionando as demais variaveis a tabela de simbolos
-    for(LAParser.Mais_varContext ct: ctx.lista_mais_var){
-      simbolo = ct.IDENT().getText();
+//   EntradaTabelaDeSimbolos etds = new EntradaTabelaDeSimbolos();
+    //System.out.println("struct = "+ctx.reg);
+    String simbolo = ctx.IDENT().getText();    //original
 
-      if(!atual.existeSimbolo(simbolo)&&(!atualTipo.existeSimbolo(simbolo))){
-        atual.adicionarSimbolo(simbolo, tipo);
-      } else {
-        Saida.println("Linha "+ct.getStart().getLine() + ": identificador " +simbolo+" ja declarado anteriormente");
+    //System.out.println("simbolo = "+simbolo);
+    /*
+    if (ctx.reg != ""){
+      System.out.println("entrou aqui");
+      simbolo = ctx.reg+"."+ simbolo;
+      System.out.println("simbolo com struct = "+simbolo);
+    }
+*/
+    if (!atual.existeSimbolo(simbolo) && (!atualTipo.existeSimbolo(simbolo))) {
+      atual.adicionarSimbolo(simbolo, tipo);
+      //System.out.println(atual.getTipo(simbolo) == "registro");
+      if (ctx.reg) {
+        tabelaRegistro.adicionarSimbolo(simbolo, tipo);
+      } else if (atual.getTipo(simbolo) == "registro" || atualTipo.getTipo(ctx.tipo().getText()) == "registro") { //pra não inserir as variaveis padrão do registro na hora que ele for definido
+        for (EntradaTabelaDeSimbolos e : tabelaRegistro.getSimbolos()) {
+          //System.out.println("simbolo struct: " + simbolo +"."+ e.getNome() + " tipo: " + e.getTipo());
+          atual.adicionarSimbolo(simbolo +"."+ e.getNome(), e.getTipo());
+        }
+      }
+    } else {
+      Saida.println("Linha " + ctx.getStart().getLine() + ": identificador " + simbolo + " ja declarado anteriormente");
+    }
+    if (ctx.mais_var() != null) {
+      for (LAParser.Mais_varContext ct : ctx.lista_mais_var) {
+        simbolo = ct.IDENT().getText();
+      /*
+      if (ctx.reg != ""){
+        System.out.println("entrou aqui virgula");
+        simbolo = ctx.reg+"."+ simbolo;
+        System.out.println("simbolo com struct virgula = "+simbolo);
+      }
+      */
+        //System.out.println("simbolo: "+ simbolo+ " tipo: "+tipo);
+        if (!atual.existeSimbolo(simbolo) && (!atualTipo.existeSimbolo(simbolo))) {
+          atual.adicionarSimbolo(simbolo, tipo);
+          //System.out.println("mais var");
+          //System.out.println("mais var  simbolo: "+simbolo+" tipo: "+tipo);
+          //System.out.println("qual eh: "+atualTipo.getTipo(tipo));
+          //System.out.println(ctx.reg || atual.getTipo(simbolo) == "registro");
+          if (ctx.reg || atual.getTipo(simbolo) == "registro") {
+            tabelaRegistro.adicionarSimbolo(simbolo, tipo);
+            for (EntradaTabelaDeSimbolos e : tabelaRegistro.getSimbolos()) {
+              //System.out.println("simbolo struct var: "+simbolo+"."+e.getNome()+" tipo: "+e.getTipo());
+              atual.adicionarSimbolo(simbolo + "." + e.getNome(), e.getTipo());
+            }
+
+          } else if (atualTipo.getTipo(tipo) == "registro") { //pra não inserir as variaveis padrão do registro na hora que ele for definido
+            for (EntradaTabelaDeSimbolos e : tabelaRegistro.getSimbolos()) {
+              //System.out.println("simbolo struct: "+simbolo+"."+e.getNome()+" tipo: "+e.getTipo());
+              atual.adicionarSimbolo(simbolo + "." + e.getNome(), e.getTipo());
+            }
+          }
+        } else {
+          Saida.println("Linha " + ct.getStart().getLine() + ": identificador " + simbolo + " ja declarado anteriormente");
+
+        }
       }
     }
 
@@ -537,6 +653,46 @@ public class AnalisadorSemantico extends LABaseVisitor{
   @Override
   public Object visitTipo(LAParser.TipoContext ctx) {
 
-    return visitTipo_estendido(ctx.tipo_estendido());
+    if (ctx != null) {
+      if (ctx.tipo_estendido() != null) {
+        //  ctx.reg = "";
+        return visitTipo_estendido(ctx.tipo_estendido());
+      } else if (ctx.registro() != null) {
+        //System.out.println("entra registro");
+        return visitRegistro(ctx.registro());
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public Object visitRegistro(LAParser.RegistroContext ctx) {
+    visitVariavel(ctx.variavel());
+    visitMais_variaveis(ctx.mais_variaveis());
+    return "registro";
+  }
+
+
+  @Override
+  public Object visitIdentificador(LAParser.IdentificadorContext ctx) {
+    //checagem se o simbolo ja foi declarado
+    String simbolo = ctx.IDENT().getText();
+
+    if(ctx.outros_ident() != null){
+      simbolo += visitOutros_ident(ctx.outros_ident());
+    }
+
+    return simbolo;
+
+  }
+
+  @Override
+  public Object visitOutros_ident(LAParser.Outros_identContext ctx) {
+    String outrosIdent = "";
+    for (LAParser.IdentificadorContext ct : ctx.lista_outrosIdent){
+      outrosIdent += "."+ct.IDENT().getText();
+    }
+
+    return outrosIdent;
   }
 }
