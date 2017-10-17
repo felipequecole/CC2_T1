@@ -128,8 +128,8 @@ public class LAParser extends Parser {
 	public ATN getATN() { return _ATN; }
 
 
-	    public boolean reg = false;
-	    public boolean escreva = false;
+	    public boolean reg = false;      													// variavel usada para indicar a manipulação de um registro
+	    public boolean escreva = false;  													// variavel usada para detectar a utilizaçao do metodo escreva, é relevante para a detecçao de variaveis de registro
 
 	public LAParser(TokenStream input) {
 		super(input);

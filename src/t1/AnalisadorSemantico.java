@@ -53,14 +53,16 @@ public class AnalisadorSemantico extends LABaseVisitor{
     return null;
   }
 
-
+// esta função verifica o tipo de expressao
   public Object tipo_expressao(LAParser.ExpressaoContext ctx){
     if(ctx==null)
       return "";
+    //se existe mais de um termo logico então o tipo é logico
     if(ctx.outros_termos_logicos().getChildCount()!=0)
       return "logico";
     if(ctx.termo_logico().outros_fatores_logicos().getChildCount()!=0)
       return "logico";
+
     if(ctx.termo_logico()!=null && ctx.termo_logico().fator_logico()!=null)
       return visitTipoParcela_logica(ctx.termo_logico().fator_logico().parcela_logica());
     return null;
@@ -120,6 +122,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
   public Object visitTipoParcela_logica(LAParser.Parcela_logicaContext ctx){
     if(ctx!=null){
       if(ctx.exp_relacional()!=null){
+        //se existe mais de uma expressão relacional então tipo é relacional
         if(ctx.exp_relacional().getChildCount()==0)
           return "logico";
         return visitTipoExp_relacional(ctx.exp_relacional());
@@ -133,8 +136,8 @@ public class AnalisadorSemantico extends LABaseVisitor{
     if(ctx.op_opcional().getChildCount()!=0){
       return "logico";
     }
-    /*** falta fazer expressão aritmerica; diferenciar inteiro de real***/
     String tipoExp="";
+    //itera por todas os tokens dentro de uma expressao relacional
     for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
       Token token=cts.get(i);
       int tipoToken=token.getType();
@@ -142,6 +145,8 @@ public class AnalisadorSemantico extends LABaseVisitor{
       int incremento=0;
 
       if(tipoToken==LAParser.IDENT){
+        //se o token for um identificador..
+        //verifica se o identificador tem outros campos
         while(true){
           if(cts.get(incremento+i+1).getText().equals(".")){
             simbolo+="."+cts.get(incremento+i+2).getText();
