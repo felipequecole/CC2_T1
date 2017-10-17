@@ -3,8 +3,8 @@
 grammar LA;
 
 @members {
-    public boolean reg = false;
-    public boolean escreva = false;
+    public boolean reg = false;      													// variavel usada para indicar a manipulação de um registro
+    public boolean escreva = false;  													// variavel usada para detectar a utilizaçao do metodo escreva, é relevante para a detecçao de variaveis de registro
 }
 
 IDENT	:	('a'..'z' | 'A'..'Z' | '_') ('a'..'z' | 'A'..'Z' | '0'..'9' | '_')*;
@@ -21,20 +21,20 @@ ERROCHAR:.;
 
 programa : declaracoes 'algoritmo' corpo 'fim_algoritmo';
 //declaracoes : decl_local_global declaracoes |;
-declaracoes : lista_DeclLocalGlobal += decl_local_global*;
+declaracoes : lista_DeclLocalGlobal += decl_local_global*; 								// a regra foi adaptada para a forma EBNF, eliminando recursividade e um alias foi definido para facilitar a manipulação
 decl_local_global : declaracao_local | declaracao_global;
 declaracao_local : 'declare' variavel [reg = false]
  | 'constante' IDENT ':' tipo_basico '=' valor_constante
  | 'tipo' id=IDENT ':' tipo;
-variavel [boolean reg] : IDENT dimensao lista_mais_var+= mais_var [reg] * ':' tipo ;
-mais_var [boolean reg]  : ',' IDENT dimensao ;
-identificador [boolean reg] : ponteiros_opcionais IDENT dimensao outros_ident;
+variavel [boolean reg] : IDENT dimensao lista_mais_var+= mais_var [reg] * ':' tipo ; 	// a regra possui um parametro reg, para detectar a manipulaçao de registros, também foi adaptada para EBNF
+mais_var [boolean reg]  : ',' IDENT dimensao ;										 	// a regra possui um parametro reg, para detectar a manipulaçao de registros
+identificador [boolean reg] : ponteiros_opcionais IDENT dimensao outros_ident;		 	// a regra possui um parametro reg, para detectar a manipulaçao de registros
 ponteiros_opcionais : '^' ponteiros_opcionais |;
-outros_ident : '.' lista_outrosIdent += identificador [reg]|;
+outros_ident : '.' lista_outrosIdent += identificador [reg]|;							// a regra foi adaptada para a forma EBNF
 dimensao : '[' exp_aritmetica ']' dimensao|;
 tipo : registro | tipo_estendido;
 //mais_ident : ',' identificador mais_ident |;
-mais_ident : (',' lista_ident += identificador [reg])*;
+mais_ident : (',' lista_ident += identificador [reg])*;									// a regra foi adaptada para a forma EBNF
 mais_variaveis [boolean reg] : variavel [reg] mais_variaveis [reg] |;
 tipo_basico : 'literal' | 'inteiro' | 'real' | 'logico';
 tipo_basico_ident : tipo_basico | IDENT;
@@ -47,13 +47,13 @@ registro : 'registro' variavel [reg = true]  mais_variaveis [reg = true]  'fim_r
 declaracao_global : 'procedimento' IDENT '(' parametros_opcional ')' declaracoes_locais comandos 'fim_procedimento'
  | 'funcao' IDENT '(' parametros_opcional ')' ':' tipo_estendido declaracoes_locais comandos 'fim_funcao' ;
 //parametros_opcional : parametro | ;
-parametros_opcional : lista_parametro += parametro* ;
+parametros_opcional : lista_parametro += parametro* ;									// a regra foi adaptada para a forma EBNF
 
 parametro : var_opcional identificador [reg] mais_ident ':' tipo_estendido mais_parametros ;
 var_opcional : 'var' | ;
 //mais_parametros : ',' parametro | ;
-mais_parametros : (',' lista_MaisParametros += parametro)* ;
-declaracoes_locais : declocais+=declaracao_local*  ;
+mais_parametros : (',' lista_MaisParametros += parametro)* ;							// a regra foi adaptada para a forma EBNF
+declaracoes_locais : declocais+=declaracao_local*  ;									// a regra foi adaptada para a forma EBNF
 corpo : declaracoes_locais comandos ;
 comandos : cmd comandos | ;
 cmd : 'leia' '(' identificador [reg] mais_ident ')'
@@ -66,7 +66,7 @@ cmd : 'leia' '(' identificador [reg] mais_ident ')'
  | ponteiros_opcionais IDENT chamada_atribuicao
  | 'retorne' expReturn = expressao [escreva] ;
 //mais_expressao : ',' expressao mais_expressao | ;
-mais_expressao [boolean escreva] : (',' lista_expressao += expressao [escreva])*;
+mais_expressao [boolean escreva] : (',' lista_expressao += expressao [escreva])*;		// a regra foi adaptada para a forma EBNF
 senao_opcional : 'senao' comandos | ;
 // Fim
 
@@ -92,14 +92,14 @@ outros_fatores: op_multiplicacao fator outros_fatores |;
 
 //@duduyamauchi
 parcela : op_unario parcela_unario | parcela_nao_unario;
-parcela_unario : '^' IDENT outros_ident dimensao | IdentChamada = IDENT chamada_partes | NUM_INT | NUM_REAL | '(' expressao [escreva] ')';
+parcela_unario : '^' IDENT outros_ident dimensao | IdentChamada = IDENT chamada_partes | NUM_INT | NUM_REAL | '(' expressao [escreva] ')';    
 parcela_nao_unario : '&' IDENT outros_ident dimensao | CADEIA;
 outras_parcelas : '%' parcela outras_parcelas | ;
 chamada_partes : '(' expressao [escreva] mais_expressao [escreva] ')' | outros_ident dimensao ;
 exp_relacional : exp_aritmetica op_opcional;
 op_opcional : op_relacional exp_aritmetica | ;
 op_relacional : '=' | '<>' | '>=' | '<=' | '>' | '<';
-expressao [boolean escreva] : termo_logico outros_termos_logicos;
+expressao [boolean escreva] : termo_logico outros_termos_logicos;						// a regra possui um parametro escreva, para detecçao do metodo "escreva" no programa de entrada
 op_nao : 'nao' | ;
 termo_logico : fator_logico outros_fatores_logicos;
 outros_termos_logicos : 'ou' termo_logico outros_termos_logicos | ;
