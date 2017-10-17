@@ -39,7 +39,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
         String stop = ctx.getStop().getText();
 
         if (ctx.escreva){
-          if (!simbolo.equals(stop) && ctx.getSourceInterval().b - ctx.getSourceInterval().a == 2 /* && alguma coisa */) {
+          if (!simbolo.equals(stop) && ctx.getSourceInterval().b - ctx.getSourceInterval().a == 2 ) {
             //System.out.println("simbolo: " + simbolo + " getText: " + stop);
             simbolo += "." + stop;
           }
@@ -139,11 +139,21 @@ public class AnalisadorSemantico extends LABaseVisitor{
     for(int i=ctx.getSourceInterval().a;i<=ctx.getSourceInterval().b;i++) {
       Token token=cts.get(i);
       int tipoToken=token.getType();
-
+      String simbolo=token.getText();
+      int incremento=0;
       if(tipoToken==LAParser.IDENT){
-        String aux=escopos.getTipoSimbolo(token.getText());
+        while(true){
+          if(cts.get(incremento+i+1).getText().equals(".")){
+            simbolo+="."+cts.get(incremento+i+2).getText();
+            incremento+=2;
+          }else{
+            break;
+          }
+        }
+        String aux=escopos.getTipoSimbolo(simbolo);
+        System.out.println("visittipo  "+simbolo+" tipo "+aux);
         if(aux==null)
-          aux=escoposTipo.getTipoSimbolo(token.getText());
+          aux=escoposTipo.getTipoSimbolo(simbolo);
         if(aux==null)
           return "";
         if(aux.equals("void"))
@@ -154,6 +164,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
           tipoToken=LAParser.NUM_INT;
         if(aux.equals("real"))
           return "real";
+        tipoExp=aux;
       }
       if(tipoToken==LAParser.CADEIA){
         if(tipoExp.equals(""))
@@ -166,6 +177,7 @@ public class AnalisadorSemantico extends LABaseVisitor{
       }else if(tipoToken==LAParser.NUM_REAL){
         return "real";
       }
+      i+=incremento;
     }
     return tipoExp;
   }
@@ -394,7 +406,22 @@ public class AnalisadorSemantico extends LABaseVisitor{
       int ncounter= ponteiro_counter(ctx.ponteiros_opcionais());
 
       String var=ctx.IDENT().getText();
+
+      if( ctx.chamada_atribuicao().outros_ident()!=null){
+        List<LAParser.IdentificadorContext> lista_outrosIdent=  ctx.chamada_atribuicao().outros_ident().lista_outrosIdent;
+        System.out.println("tamanho:  "+lista_outrosIdent.size());
+
+        for(LAParser.IdentificadorContext ic: lista_outrosIdent){
+          var+="."+ic.IDENT().getText();
+          System.out.println("visitasdfasdfasd cmd: "+var);
+
+        }
+        System.out.println("visit cmd: "+var);
+      }
+
+
       String tipoVar = escopos.getTipoSimbolo(var);
+      System.out.println("visit cmd: "+var+" tipo: "+tipoVar +" tipo exp:"+tipo);
 
       boolean atribInvalida =! tipo.equals(tipoVar);
 
