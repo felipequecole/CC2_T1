@@ -111,7 +111,6 @@ public class GeradorDeCodigo extends LABaseListener {
         LAParser.ProgramaContext tree = parser.programa();
         GeradorDeCodigo gc = new GeradorDeCodigo();
         ParseTreeWalker.DEFAULT.walk(gc, tree);
-        System.out.println(gc.toString());
     }
 
 
